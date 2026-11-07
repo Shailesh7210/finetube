@@ -2,15 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, LogOut, User } from 'lucide-react';
+import { Search, LogOut, User, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Logo } from '@/components/Logo';
+import { IngestVideoModal } from '@/components/IngestVideoModal';
 
 export function Navbar() {
   const pathname = usePathname();
   const [query, setQuery] = useState('');
+  const [isIngestOpen, setIsIngestOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
 
   const publicLinks = [
@@ -60,8 +62,17 @@ export function Navbar() {
         </div>
 
         {/* Search Bar & Auth Actions */}
-        <div className="flex items-center gap-3">
-          <form action="/search" method="GET" className="relative w-36 sm:w-56 hidden sm:block">
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsIngestOpen(true)}
+            className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-xs font-semibold text-zinc-300 hover:text-white transition-colors"
+            title="Ingest Educational Video"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Ingest</span>
+          </button>
+
+          <form action="/search" method="GET" className="relative w-36 sm:w-52 hidden sm:block">
             <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -112,6 +123,11 @@ export function Navbar() {
           )}
         </div>
       </header>
+
+      <IngestVideoModal
+        isOpen={isIngestOpen}
+        onClose={() => setIsIngestOpen(false)}
+      />
     </div>
   );
 }

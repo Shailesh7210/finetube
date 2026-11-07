@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import { calculateTopicScore } from './services/rankingService.js';
+import { answerGroundedQuestion, generateStructuredNotesForVideo, queueVideoIngestion, onIngestionComplete, jobsQueue } from './services/aiService.js';
 
 dotenv.config();
 
@@ -143,6 +144,72 @@ let users: any[] = [
 
 let notes: any[] = [];
 let userFollowedTopics = ['react_hooks', 'binary_search_trees'];
+
+let playlists: any[] = [
+  {
+    id: 'pl_react_mastery',
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: 'react_hooks',
+    title: 'React Hooks: From Fundamentals to Custom Hooks',
+    description: 'An AI-curated sequence with minimal conceptual redundancy. Begins with side-effect synchronization, then elevates to modular custom hook architectures.',
+    visibility: 'public',
+    items: [
+      {
+        id: 'item_1',
+        videoId: 'vid_react_useeffect',
+        position: 0,
+        purpose: 'Foundational side effect management and cleanup functions',
+        coveredConcepts: ['useEffect', 'dependency array', 'cleanup function']
+      }
+    ],
+    coveredConcepts: ['useEffect', 'dependency array', 'cleanup function'],
+    missingConcepts: ['useMemo', 'useCallback'],
+    estimatedTotalMinutes: 14,
+    ratingAverage: 4.89,
+    ratingCount: 34,
+    coherenceScore: 94,
+    redundancyPenalty: 0.05
+  },
+  {
+    id: 'pl_dsa_trees',
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: 'binary_search_trees',
+    title: 'Binary Search Trees: Structure, Algorithms & Complexity',
+    description: 'Master binary search tree properties, pointers, iterative search, recursive insertion, and edge-case deletion.',
+    visibility: 'public',
+    items: [
+      {
+        id: 'item_dsa_1',
+        videoId: 'vid_bst_explained',
+        position: 0,
+        purpose: 'Complete end-to-end BST theory and pointer implementation',
+        coveredConcepts: ['BST property', 'search operation', 'node insertion', 'node deletion', 'time complexity']
+      }
+    ],
+    coveredConcepts: ['BST property', 'search operation', 'node insertion', 'node deletion', 'time complexity'],
+    missingConcepts: ['AVL Trees rotation balance'],
+    estimatedTotalMinutes: 26,
+    ratingAverage: 4.92,
+    ratingCount: 48,
+    coherenceScore: 96,
+    redundancyPenalty: 0.02
+  }
+];
+
+let reviewQueue: any[] = [
+  {
+    id: 'rev_1',
+    videoId: 'vid_unconfirmed_sample',
+    title: 'Advanced React State Patterns & Concurrent Rendering',
+    detectedTopic: 'React Hooks',
+    confidence: 0.68,
+    reason: 'Low confidence mapping between Concurrent Mode and standard useEffect lifecycle',
+    status: 'pending_review',
+    submittedAt: '2026-11-06T10:00:00Z'
+  }
+];
 
 // Health check
 app.get('/api/v1/health', (_req: Request, res: Response) => {
@@ -294,6 +361,276 @@ app.post('/api/v1/notes', (req: Request, res: Response) => {
 app.delete('/api/v1/notes/:id', (req: Request, res: Response) => {
   notes = notes.filter(n => n.id !== req.params.id);
   res.json({ success: true });
+});
+
+// Listen for completed ingestion jobs and publish into videos catalog
+onIngestionComplete((ingestedVideo) => {
+  const existingIdx = videos.findIndex(v => v.providerVideoId === ingestedVideo.providerVideoId);
+  if (existingIdx >= 0) {
+    videos[existingIdx] = { ...videos[existingIdx], ...ingestedVideo };
+  } else {
+    videos.unshift(ingestedVideo);
+  }
+});
+
+// Playlists (Blueprint Section 7 & 12)
+app.get('/api/v1/playlists', (_req: Request, res: Response) => {
+  res.json({ data: playlists });
+});
+
+app.post('/api/v1/playlists', (req: Request, res: Response) => {
+  const { title, description, topicId, videoIds } = req.body;
+  if (!title) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+
+  const selectedVideos = Array.isArray(videoIds)
+    ? videos.filter(v => videoIds.includes(v.id))
+    : [];
+
+  const totalMinutes = Math.round(
+    selectedVideos.reduce((acc, v) => acc + (v.durationSeconds || 0), 0) / 60
+  );
+
+  const newPlaylist = {
+    id: `pl_user_${Date.now()}`,
+    ownerId: 'user_default',
+    type: 'USER',
+    topicId: topicId || 'react_hooks',
+    title: title.trim(),
+    description: description?.trim() || '',
+    visibility: 'public',
+    items: selectedVideos.map((v, idx) => ({
+      id: `item_${Date.now()}_${idx}`,
+      videoId: v.id,
+      position: idx,
+      purpose: `Lesson ${idx + 1}: ${v.title}`,
+      coveredConcepts: v.topicCoverage?.map((c: any) => c.conceptName) || []
+    })),
+    coveredConcepts: selectedVideos.flatMap(v => v.topicCoverage?.map((c: any) => c.conceptName) || []),
+    missingConcepts: [],
+    estimatedTotalMinutes: totalMinutes || 15,
+    ratingAverage: 5.0,
+    ratingCount: 1,
+    coherenceScore: 90,
+    redundancyPenalty: 0.0
+  };
+
+  playlists.unshift(newPlaylist);
+  res.status(201).json({ data: newPlaylist });
+});
+
+app.get('/api/v1/playlists/:id', (req: Request, res: Response) => {
+  const playlist = playlists.find(p => p.id === req.params.id);
+  if (!playlist) {
+    return res.status(404).json({ error: 'Playlist not found' });
+  }
+
+  // Hydrate items with video details
+  const hydratedItems = playlist.items.map((item: any) => {
+    const video = videos.find(v => v.id === item.videoId);
+    return {
+      ...item,
+      video
+    };
+  });
+
+  res.json({
+    data: {
+      ...playlist,
+      items: hydratedItems
+    }
+  });
+});
+
+app.patch('/api/v1/playlists/:id/items/reorder', (req: Request, res: Response) => {
+  const playlist = playlists.find(p => p.id === req.params.id);
+  if (!playlist) {
+    return res.status(404).json({ error: 'Playlist not found' });
+  }
+
+  const { items } = req.body;
+  if (!Array.isArray(items)) {
+    return res.status(400).json({ error: 'Items array is required' });
+  }
+
+  playlist.items = items.map((item: any, idx: number) => ({
+    ...item,
+    position: idx
+  }));
+
+  res.json({ data: playlist });
+});
+
+// Blueprint Section 7.1: Fork/Save AI Playlist to personal collection
+app.post('/api/v1/playlists/:id/fork', (req: Request, res: Response) => {
+  const original = playlists.find(p => p.id === req.params.id);
+  if (!original) {
+    return res.status(404).json({ error: 'Original playlist not found' });
+  }
+
+  const forkedPlaylist = {
+    ...original,
+    id: `pl_forked_${Date.now()}`,
+    ownerId: 'user_default',
+    type: 'CUSTOMISED',
+    title: `${original.title} (Custom Path)`,
+    description: `Personal fork of ${original.title}. Customized for individual study path.`,
+    createdAt: new Date().toISOString()
+  };
+
+  playlists.unshift(forkedPlaylist);
+  res.status(201).json({ data: forkedPlaylist });
+});
+
+// Blueprint Section 7.5: Rate Playlist Sequence Separately from Video Quality
+app.post('/api/v1/playlists/:id/ratings', (req: Request, res: Response) => {
+  const playlist = playlists.find(p => p.id === req.params.id);
+  if (!playlist) {
+    return res.status(404).json({ error: 'Playlist not found' });
+  }
+
+  const { rating, orderClarity, coversTopic, hasRepetition, feedback } = req.body;
+  if (typeof rating === 'number' && rating >= 1 && rating <= 5) {
+    const total = playlist.ratingAverage * playlist.ratingCount + rating;
+    playlist.ratingCount += 1;
+    playlist.ratingAverage = Number((total / playlist.ratingCount).toFixed(2));
+  }
+
+  res.json({
+    data: {
+      playlistId: playlist.id,
+      ratingAverage: playlist.ratingAverage,
+      ratingCount: playlist.ratingCount,
+      feedbackReceived: { orderClarity, coversTopic, hasRepetition, feedback }
+    }
+  });
+});
+
+// Blueprint Section 7.2 & 7.4: AI Playlist Generation Algorithm
+app.post('/api/v1/topics/:id/ai-playlists', (req: Request, res: Response) => {
+  const topic = topics.find(t => t.id === req.params.id || t.slug === req.params.id);
+  if (!topic) {
+    return res.status(404).json({ error: 'Topic not found' });
+  }
+
+  const candidateVideos = videos.filter(v => v.primaryTopicId === topic.id);
+  const checklist = topic.conceptChecklist || [];
+
+  // Algorithm: Order foundational concepts before dependent concepts
+  const orderedVideos = [...candidateVideos].sort((a, b) => {
+    const aFirstConceptIdx = checklist.findIndex(c => 
+      a.topicCoverage?.some((tc: any) => tc.conceptId.toLowerCase().includes(c.toLowerCase()))
+    );
+    const bFirstConceptIdx = checklist.findIndex(c => 
+      b.topicCoverage?.some((tc: any) => tc.conceptId.toLowerCase().includes(c.toLowerCase()))
+    );
+    return (aFirstConceptIdx === -1 ? 99 : aFirstConceptIdx) - (bFirstConceptIdx === -1 ? 99 : bFirstConceptIdx);
+  });
+
+  const covered = new Set<string>();
+  orderedVideos.forEach(v => {
+    v.topicCoverage?.forEach((tc: any) => covered.add(tc.conceptName || tc.conceptId));
+  });
+
+  const missing = checklist.filter(c => !Array.from(covered).some(cv => cv.toLowerCase().includes(c.toLowerCase())));
+
+  const generatedPlaylist = {
+    id: `pl_ai_${topic.id}_${Date.now()}`,
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: topic.id,
+    title: `AI Synthesized: ${topic.name} Mastery`,
+    description: `Algorithmic learning progression for ${topic.name}. Sequenced from foundational invariant principles to advanced patterns with zero detected repetition.`,
+    visibility: 'public',
+    items: orderedVideos.map((v, idx) => ({
+      id: `item_gen_${idx}`,
+      videoId: v.id,
+      position: idx,
+      purpose: idx === 0 ? 'Foundational principles & core mechanics' : 'Applied deep dive & advanced edge cases',
+      coveredConcepts: v.topicCoverage?.map((c: any) => c.conceptName) || []
+    })),
+    coveredConcepts: Array.from(covered),
+    missingConcepts: missing,
+    estimatedTotalMinutes: Math.round(orderedVideos.reduce((acc, v) => acc + (v.durationSeconds || 0), 0) / 60) || 20,
+    ratingAverage: 5.0,
+    ratingCount: 1,
+    coherenceScore: 98,
+    redundancyPenalty: 0.01
+  };
+
+  playlists.unshift(generatedPlaylist);
+  res.status(201).json({ data: generatedPlaylist });
+});
+
+// Admin & Operations (Blueprint Section 16)
+app.get('/api/v1/admin/review-queue', (_req: Request, res: Response) => {
+  res.json({ data: reviewQueue });
+});
+
+app.post('/api/v1/admin/review-queue/:id/resolve', (req: Request, res: Response) => {
+  const item = reviewQueue.find(r => r.id === req.params.id);
+  if (!item) return res.status(404).json({ error: 'Review item not found' });
+  const { decision } = req.body;
+  item.status = decision || 'approved';
+  res.json({ data: item });
+});
+
+app.get('/api/v1/admin/jobs', (_req: Request, res: Response) => {
+  const jobsList = Array.from(jobsQueue.values());
+  res.json({ data: jobsList });
+});
+
+// AI & Video Ingestion (Blueprint Section 4.2, 8.6, 13.2)
+app.post('/api/v1/ai/ask', (req: Request, res: Response) => {
+  const { videoId, question } = req.body;
+  if (!videoId || !question) {
+    return res.status(400).json({ error: 'videoId and question are required' });
+  }
+
+  const video = videos.find(v => v.id === videoId);
+  if (!video) {
+    return res.status(404).json({ error: 'Video not found' });
+  }
+
+  const result = answerGroundedQuestion(video, question);
+  res.json({ data: result });
+});
+
+app.post('/api/v1/ai/generate-notes', (req: Request, res: Response) => {
+  const { videoId } = req.body;
+  const video = videos.find(v => v.id === videoId);
+  if (!video) {
+    return res.status(404).json({ error: 'Video not found' });
+  }
+
+  const notesDoc = generateStructuredNotesForVideo(video);
+  res.json({ data: notesDoc });
+});
+
+app.post('/api/v1/videos/ingest', (req: Request, res: Response) => {
+  const { urlOrId, primaryTopicId } = req.body;
+  if (!urlOrId) {
+    return res.status(400).json({ error: 'urlOrId is required' });
+  }
+
+  const job = queueVideoIngestion(urlOrId, primaryTopicId);
+  res.status(202).json({
+    data: {
+      jobId: job.jobId,
+      status: job.status,
+      statusUrl: `/api/v1/jobs/${job.jobId}`
+    }
+  });
+});
+
+app.get('/api/v1/jobs/:jobId', (req: Request, res: Response) => {
+  const jobId = Array.isArray(req.params.jobId) ? req.params.jobId[0] : req.params.jobId;
+  const job = jobsQueue.get(jobId);
+  if (!job) {
+    return res.status(404).json({ error: 'Job not found' });
+  }
+  res.json({ data: job });
 });
 
 // Start server

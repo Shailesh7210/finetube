@@ -8,6 +8,7 @@ import { store } from '@/lib/store';
 import { VideoPlayer, VideoPlayerRef } from '@/components/workspace/VideoPlayer';
 import { PersonalNotesPanel } from '@/components/workspace/PersonalNotesPanel';
 import { AiNotesPanel } from '@/components/workspace/AiNotesPanel';
+import { AskAiPanel } from '@/components/workspace/AskAiPanel';
 import { CodeEditorSandbox } from '@/components/workspace/CodeEditorSandbox';
 import { RatingModal } from '@/components/workspace/RatingModal';
 import { formatTimestamp } from '@/lib/utils';
@@ -18,7 +19,7 @@ export default function WatchPage() {
   const videoId = params?.videoId as string;
   const playerRef = useRef<VideoPlayerRef>(null);
 
-  const [activeTab, setActiveTab] = useState<'notes' | 'code' | 'ai_notes' | 'chapters'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'code' | 'ai_notes' | 'ask_ai' | 'chapters'>('notes');
   const [currentTime, setCurrentTime] = useState(0);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -149,6 +150,16 @@ export default function WatchPage() {
               AI Notes
             </button>
             <button
+              onClick={() => setActiveTab('ask_ai')}
+              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+                activeTab === 'ask_ai'
+                  ? 'border-white text-white font-semibold'
+                  : 'border-transparent text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Ask AI
+            </button>
+            <button
               onClick={() => setActiveTab('chapters')}
               className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
                 activeTab === 'chapters'
@@ -180,6 +191,13 @@ export default function WatchPage() {
 
             {activeTab === 'ai_notes' && (
               <AiNotesPanel
+                video={video}
+                onSeek={handleSeek}
+              />
+            )}
+
+            {activeTab === 'ask_ai' && (
+              <AskAiPanel
                 video={video}
                 onSeek={handleSeek}
               />
