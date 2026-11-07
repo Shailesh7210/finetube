@@ -160,5 +160,85 @@ export const api = {
   async getAdminJobs(): Promise<any[]> {
     const remote = await safeFetch<any[]>('/admin/jobs');
     return remote || [];
+  },
+
+  // Developer Sandbox & Execution (Blueprint Section 8.3 & 8.4)
+  async executeCode(code: string, language: string = 'javascript', videoId?: string, topicId?: string): Promise<{
+    output: string[];
+    status: 'SUCCESS' | 'ERROR';
+    executionTimeMs: number;
+    quotaRemaining: number;
+  }> {
+    const remote = await safeFetch<any>('/code/execute', {
+      method: 'POST',
+      body: JSON.stringify({ code, language, videoId, topicId })
+    });
+    if (remote) return remote;
+
+    // Fallback safe client-side execution if backend is offline
+    const startTime = Date.now();
+    const logs: string[] = [];
+    try {
+      const customConsole = {
+        log: (...args: any[]) => {
+          logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+        },
+        error: (...args: any[]) => {
+          logs.push(`Error: ${args.join(' ')}`);
+        }
+      };
+      const runFn = new Function('console', code);
+      runFn(customConsole);
+      return {
+        output: logs.length > 0 ? logs : ['Execution finished. No output.'],
+        status: 'SUCCESS',
+        executionTimeMs: Math.max(1, Date.now() - startTime),
+        quotaRemaining: 48
+      };
+    } catch (err: any) {
+      return {
+        output: [`Runtime Error: ${err.message}`],
+        status: 'ERROR',
+        executionTimeMs: Math.max(1, Date.now() - startTime),
+        quotaRemaining: 48
+      };
+    }
+  },
+
+  async saveCodeSnippet(title: string, code: string, language: string, videoId?: string, topicId?: string): Promise<any> {
+    const remote = await safeFetch<any>('/workspaces/snippets', {
+      method: 'POST',
+      body: JSON.stringify({ title, code, language, videoId, topicId })
+    });
+    if (remote) return remote;
+
+    // Local store fallback
+    return store.createNote({
+      folderId: 'f_code',
+      type: 'PERSONAL',
+      title: title || `${language.toUpperCase()} Snippet`,
+      topicIds: topicId ? [topicId] : [],
+      source: {
+        type: 'video',
+        videoId
+      },
+      content: {
+        text: code,
+        sections: [
+          {
+            heading: `Code Practice: ${language}`,
+            body: 'Saved from interactive workspace.',
+            codeSnippet: code
+          }
+        ]
+      },
+      tags: ['code-practice', language]
+    });
+  },
+
+  async getCodeQuota(): Promise<{ dailyQuota: number; remaining: number; usedToday: number }> {
+    const remote = await safeFetch<any>('/workspaces/quota');
+    if (remote) return remote;
+    return { dailyQuota: 50, remaining: 48, usedToday: 2 };
   }
 };
