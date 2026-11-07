@@ -4,8 +4,13 @@ import { Navbar } from '@/components/Navbar';
 import { AuthProvider } from '@/lib/auth-context';
 
 export const metadata: Metadata = {
-  title: 'FineTube',
-  description: 'Education-only video platform with in-context learning workspace.',
+  title: 'FineTube — Education Video Platform',
+  description: 'Distraction-free educational video learning platform with interactive workspace, Bayesian topic ranking, and sequenced paths.',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({
