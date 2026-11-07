@@ -27,7 +27,7 @@ export default function LibraryPage() {
       <div className="border-b border-zinc-800 pb-4">
         <h1 className="text-xl font-semibold text-white">Study Library</h1>
         <p className="text-xs text-zinc-400 mt-0.5">
-          Your saved notes, summaries, and learning bookmarks.
+          Your <strong>personal notes</strong>, <strong>AI study summaries</strong>, and <strong>saved bookmarks</strong>.
         </p>
       </div>
 

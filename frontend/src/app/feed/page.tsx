@@ -55,13 +55,13 @@ export default function FeedPage() {
             href="/profile"
             className="text-xs text-zinc-400 hover:text-white shrink-0 hidden sm:inline"
           >
-            Customize feed
+            Customize <strong>profile & feed</strong>
           </Link>
           <Link
             href="/topics"
             className="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 hidden sm:inline"
           >
-            All topics
+            All <strong>topics</strong>
           </Link>
         </div>
       </div>

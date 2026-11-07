@@ -84,7 +84,7 @@ function ProfileForm() {
         )}
         <h1 className="text-2xl font-bold text-white">Customize Your Profile</h1>
         <p className="text-xs text-zinc-400">
-          Tailor your followed curriculum topics, learning goals, and workspace defaults.
+          Tailor your <strong>followed curriculum topics</strong>, <strong>learning goals</strong>, and <strong>workspace defaults</strong>.
         </p>
       </div>
 
@@ -210,7 +210,7 @@ function ProfileForm() {
           <div className="flex items-center justify-between p-3 rounded-md bg-zinc-900/40 border border-zinc-800">
             <div>
               <span className="text-xs font-medium text-zinc-200 block">Strict Topic Focus Mode</span>
-              <span className="text-[11px] text-zinc-500">Only recommend videos matching your explicitly followed topics.</span>
+              <span className="text-[11px] text-zinc-500">Only recommend videos matching your <strong>explicitly followed topics</strong>.</span>
             </div>
             <button
               type="button"

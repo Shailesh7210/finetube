@@ -11,7 +11,7 @@ export default function PlaylistsPage() {
       <div className="border-b border-zinc-800 pb-4">
         <h1 className="text-xl font-semibold text-white">Learning Paths</h1>
         <p className="text-xs text-zinc-400 mt-0.5">
-          Curated topic sequences organized by concept progression.
+          Curated topic sequences organized by <strong>concept progression</strong> with <strong>minimal redundancy</strong>.
         </p>
       </div>
 
@@ -26,8 +26,8 @@ export default function PlaylistsPage() {
             >
               <div>
                 <div className="flex items-center justify-between text-xs text-zinc-500 mb-1">
-                  <span>{topic ? topic.name : 'Computer Science'}</span>
-                  <span>{playlist.items.length} lessons • ~{playlist.estimatedTotalMinutes}m</span>
+                  <span>{topic ? <strong>{topic.name}</strong> : 'Computer Science'}</span>
+                  <span><strong>{playlist.items.length}</strong> lessons • <strong>~{playlist.estimatedTotalMinutes}m</strong></span>
                 </div>
 
                 <Link href={`/playlists/${playlist.id}`}>
