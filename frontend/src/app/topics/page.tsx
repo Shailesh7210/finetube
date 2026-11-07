@@ -17,9 +17,9 @@ export default function TopicsPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
       <div className="border-b border-zinc-800 pb-4">
-        <h1 className="text-xl font-semibold text-white">Topics</h1>
+        <h1 className="text-xl font-semibold text-white">Curriculum Topics</h1>
         <p className="text-xs text-zinc-400 mt-0.5">
-          Follow topics to customize what appears in your feed.
+          Follow topics to strictly customize what appears in your <strong>focused feed</strong>.
         </p>
       </div>
 
