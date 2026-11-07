@@ -124,12 +124,107 @@ let videos = [
   }
 ];
 
+let users: any[] = [
+  {
+    id: 'user_default',
+    email: 'alex@finetube.internal',
+    password: 'password123',
+    displayName: 'Alex Learner',
+    role: 'learner',
+    bio: 'Software engineer focusing on modern React patterns and data structures.',
+    learningGoal: 'Master React internals and algorithmic problem solving.',
+    followedTopicIds: ['react_hooks', 'binary_search_trees'],
+    mutedTopicIds: [],
+    preferredLanguage: 'javascript',
+    dailyGoalMinutes: 30,
+    strictFocusMode: true
+  }
+];
+
 let notes: any[] = [];
 let userFollowedTopics = ['react_hooks', 'binary_search_trees'];
 
 // Health check
 app.get('/api/v1/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'finetube-backend', timestamp: new Date().toISOString() });
+});
+
+// Authentication & Profile Endpoints
+app.post('/api/v1/auth/signup', (req: Request, res: Response) => {
+  const { name, email, password, learningGoal } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (existing) {
+    return res.status(409).json({ error: 'User with this email already exists' });
+  }
+
+  const newUser = {
+    id: `user_${Date.now()}`,
+    email: email.trim().toLowerCase(),
+    password,
+    displayName: name?.trim() || email.split('@')[0],
+    role: 'learner',
+    bio: '',
+    learningGoal: learningGoal || 'Build deep conceptual understanding',
+    followedTopicIds: ['react_hooks'],
+    mutedTopicIds: [],
+    preferredLanguage: 'javascript',
+    dailyGoalMinutes: 30,
+    strictFocusMode: true
+  };
+
+  users.push(newUser);
+
+  // Exclude password in response
+  const { password: _, ...userSafe } = newUser;
+  res.status(201).json({
+    data: {
+      user: userSafe,
+      token: `token_${newUser.id}`
+    }
+  });
+});
+
+app.post('/api/v1/auth/login', (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  const user = users.find(u => u.email.toLowerCase() === email?.toLowerCase());
+  if (!user || user.password !== password) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+
+  const { password: _, ...userSafe } = user;
+  res.json({
+    data: {
+      user: userSafe,
+      token: `token_${user.id}`
+    }
+  });
+});
+
+app.get('/api/v1/auth/me', (req: Request, res: Response) => {
+  const user = users[0];
+  const { password: _, ...userSafe } = user;
+  res.json({ data: userSafe });
+});
+
+app.put('/api/v1/auth/profile', (req: Request, res: Response) => {
+  const { id, displayName, bio, learningGoal, followedTopicIds, preferredLanguage, dailyGoalMinutes, strictFocusMode } = req.body;
+  const userIndex = users.findIndex(u => u.id === id || u.email === req.body.email);
+  const target = userIndex >= 0 ? users[userIndex] : users[0];
+
+  if (displayName) target.displayName = displayName;
+  if (bio !== undefined) target.bio = bio;
+  if (learningGoal !== undefined) target.learningGoal = learningGoal;
+  if (Array.isArray(followedTopicIds)) target.followedTopicIds = followedTopicIds;
+  if (preferredLanguage) target.preferredLanguage = preferredLanguage;
+  if (dailyGoalMinutes) target.dailyGoalMinutes = dailyGoalMinutes;
+  if (strictFocusMode !== undefined) target.strictFocusMode = strictFocusMode;
+
+  const { password: _, ...userSafe } = target;
+  res.json({ data: userSafe });
 });
 
 // Focused Feed (Blueprint Section 5.4 & 12)

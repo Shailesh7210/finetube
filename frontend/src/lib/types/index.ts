@@ -192,7 +192,12 @@ export interface UserProfile {
   email: string;
   displayName: string;
   role: 'learner' | 'creator' | 'admin';
+  bio?: string;
+  learningGoal?: string;
   followedTopicIds: string[];
   mutedTopicIds: string[];
+  preferredLanguage?: 'javascript' | 'typescript' | 'python';
+  dailyGoalMinutes?: number;
+  strictFocusMode?: boolean;
   avatarUrl?: string;
 }

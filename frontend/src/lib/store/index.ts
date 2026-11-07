@@ -28,7 +28,88 @@ class StoreState {
   folders: Folder[] = [...INITIAL_FOLDERS];
   notes: Note[] = [...INITIAL_NOTES];
   user: UserProfile = { ...INITIAL_USER_PROFILE };
+  currentUser: UserProfile | null = null;
   ratings: VideoRating[] = [];
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('finetube_user');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          this.currentUser = parsed;
+          this.user = parsed;
+        }
+      } catch (e) {
+        // local storage not available or invalid
+      }
+    }
+  }
+
+  getCurrentUser(): UserProfile | null {
+    return this.currentUser;
+  }
+
+  isAuthenticated(): boolean {
+    return this.currentUser !== null;
+  }
+
+  login(email: string): UserProfile {
+    const loggedUser: UserProfile = {
+      ...this.user,
+      email: email.trim(),
+      displayName: email.split('@')[0] || 'Learner'
+    };
+    this.currentUser = loggedUser;
+    this.user = loggedUser;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('finetube_user', JSON.stringify(loggedUser));
+    }
+    return loggedUser;
+  }
+
+  signup(name: string, email: string, goal?: string): UserProfile {
+    const newUser: UserProfile = {
+      id: `user_${Date.now()}`,
+      email: email.trim(),
+      displayName: name.trim() || email.split('@')[0],
+      role: 'learner',
+      bio: '',
+      learningGoal: goal || 'Deep conceptual mastery',
+      followedTopicIds: ['react_hooks'],
+      mutedTopicIds: [],
+      preferredLanguage: 'javascript',
+      dailyGoalMinutes: 30,
+      strictFocusMode: true
+    };
+    this.currentUser = newUser;
+    this.user = newUser;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('finetube_user', JSON.stringify(newUser));
+    }
+    return newUser;
+  }
+
+  logout(): void {
+    this.currentUser = null;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('finetube_user');
+    }
+  }
+
+  updateProfile(updates: Partial<UserProfile>): UserProfile {
+    const base = this.currentUser || this.user;
+    const updated: UserProfile = {
+      ...base,
+      ...updates
+    };
+    this.currentUser = updated;
+    this.user = updated;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('finetube_user', JSON.stringify(updated));
+    }
+    return updated;
+  }
 
   // Topics
   getTopics(): Topic[] {
