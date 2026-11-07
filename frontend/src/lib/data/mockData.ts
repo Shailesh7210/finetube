@@ -427,6 +427,11 @@ export const INITIAL_USER_PROFILE: UserProfile = {
   email: 'learner@finetube.internal',
   displayName: 'Alex Learner',
   role: 'learner',
+  bio: 'Software engineer building deep fundamentals in algorithms and frontend architecture.',
+  learningGoal: 'Master React internals and data structures',
   followedTopicIds: ['react_hooks', 'binary_search_trees', 'system_design'],
-  mutedTopicIds: []
+  mutedTopicIds: [],
+  preferredLanguage: 'javascript',
+  dailyGoalMinutes: 30,
+  strictFocusMode: true
 };
