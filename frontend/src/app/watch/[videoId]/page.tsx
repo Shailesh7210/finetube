@@ -10,6 +10,7 @@ import { PersonalNotesPanel } from '@/components/workspace/PersonalNotesPanel';
 import { AiNotesPanel } from '@/components/workspace/AiNotesPanel';
 import { AskAiPanel } from '@/components/workspace/AskAiPanel';
 import { CodeEditorSandbox } from '@/components/workspace/CodeEditorSandbox';
+import { QuizPanel } from '@/components/workspace/QuizPanel';
 import { RatingModal } from '@/components/workspace/RatingModal';
 import { formatTimestamp } from '@/lib/utils';
 import { calculateBayesianRating } from '@/lib/ranking';
@@ -19,7 +20,7 @@ export default function WatchPage() {
   const videoId = params?.videoId as string;
   const playerRef = useRef<VideoPlayerRef>(null);
 
-  const [activeTab, setActiveTab] = useState<'notes' | 'code' | 'ai_notes' | 'ask_ai' | 'chapters'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'code' | 'quiz' | 'ai_notes' | 'ask_ai' | 'chapters'>('notes');
   const [currentTime, setCurrentTime] = useState(0);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -140,6 +141,16 @@ export default function WatchPage() {
               Code
             </button>
             <button
+              onClick={() => setActiveTab('quiz')}
+              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+                activeTab === 'quiz'
+                  ? 'border-white text-white font-semibold'
+                  : 'border-transparent text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Quiz
+            </button>
+            <button
               onClick={() => setActiveTab('ai_notes')}
               className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
                 activeTab === 'ai_notes'
@@ -186,6 +197,13 @@ export default function WatchPage() {
               <CodeEditorSandbox
                 videoId={video.id}
                 topicId={video.primaryTopicId}
+              />
+            )}
+
+            {activeTab === 'quiz' && (
+              <QuizPanel
+                video={video}
+                onSeek={handleSeek}
               />
             )}
 

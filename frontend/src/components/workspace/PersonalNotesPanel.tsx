@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Download } from 'lucide-react';
 import { Note } from '@/lib/types';
 import { store } from '@/lib/store';
-import { formatTimestamp } from '@/lib/utils';
+import { formatTimestamp, downloadMarkdownFile } from '@/lib/utils';
 
 interface PersonalNotesPanelProps {
   videoId: string;
@@ -59,8 +59,38 @@ export function PersonalNotesPanel({
     refresh();
   };
 
+  const handleExportMarkdown = () => {
+    if (notes.length === 0) return;
+    const content = [
+      `# Study Notes: ${notes[0]?.title || 'FineTube Lecture'}`,
+      `**Topic ID**: ${topicId}`,
+      `**Exported Date**: ${new Date().toLocaleDateString()}`,
+      `\n---\n`,
+      ...notes.map((n, i) => [
+        `### ${i + 1}. ${n.title} ${n.source?.timestampSeconds !== undefined ? `[${formatTimestamp(n.source.timestampSeconds)}]` : ''}`,
+        `${n.content.text || ''}\n`
+      ].join('\n'))
+    ].join('\n');
+
+    downloadMarkdownFile(`finetube-${videoId}-notes.md`, content);
+  };
+
   return (
     <div className="flex flex-col h-full space-y-4">
+      {/* Header Actions */}
+      {notes.length > 0 && (
+        <div className="flex items-center justify-between text-xs pb-1 border-b border-zinc-800/80">
+          <span className="text-zinc-500 font-mono text-[11px]">{notes.length} saved notes</span>
+          <button
+            onClick={handleExportMarkdown}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 hover:text-white transition-colors"
+            title="Download Notes as Markdown (.md)"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export (.md)</span>
+          </button>
+        </div>
+      )}
       {/* Input */}
       <form onSubmit={handleAdd} className="space-y-2">
         <div className="flex items-center gap-2">

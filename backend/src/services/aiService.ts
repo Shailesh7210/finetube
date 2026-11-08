@@ -169,6 +169,133 @@ export function generateStructuredNotesForVideo(video: any) {
 }
 
 /**
+ * Blueprint Section 13.0: Grounded Concept Quiz Generator (POST /ai/create-quiz)
+ */
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  citationTimestamp: number;
+}
+
+export function generateConceptQuizForVideo(video: any) {
+  const title = (video.title || '').toLowerCase();
+  
+  if (video.id === 'vid_react_useeffect' || title.includes('useeffect')) {
+    return {
+      videoId: video.id,
+      title: 'React useEffect Concept Assessment',
+      questions: [
+        {
+          id: 'q1',
+          question: 'When does the cleanup function returned from useEffect execute?',
+          options: [
+            'Only when the browser window closes',
+            'Before re-running the effect with new dependencies and upon unmounting',
+            'Immediately after the component renders for the first time',
+            'Synchronously during the virtual DOM reconciliation phase'
+          ],
+          correctIndex: 1,
+          explanation: 'The cleanup function is designed to prevent memory leaks by executing prior to re-running the effect with updated values, as well as on final unmount.',
+          citationTimestamp: 540
+        },
+        {
+          id: 'q2',
+          question: 'What happens if you supply an empty dependency array [] to useEffect?',
+          options: [
+            'The effect re-runs on every render cycle',
+            'The effect never executes',
+            'The effect executes only once after the initial render',
+            'React throws a compilation warning'
+          ],
+          correctIndex: 2,
+          explanation: 'Passing an empty array indicates that the effect depends on zero mutable variables, so React executes it once after initial mount.',
+          citationTimestamp: 310
+        },
+        {
+          id: 'q3',
+          question: 'How does React compare dependencies between renders?',
+          options: [
+            'Deep recursive JSON serialization',
+            'Loose equality (==)',
+            'Shallow referential comparison via Object.is',
+            'Cryptographic hashing'
+          ],
+          correctIndex: 2,
+          explanation: 'React uses Object.is shallow comparison. Functions or objects re-instantiated every render will trigger effects unless memoized.',
+          citationTimestamp: 120
+        }
+      ]
+    };
+  }
+
+  if (video.id === 'vid_bst_explained' || title.includes('binary search tree')) {
+    return {
+      videoId: video.id,
+      title: 'Binary Search Tree Concept Assessment',
+      questions: [
+        {
+          id: 'q1',
+          question: 'What is the fundamental invariant property of a Binary Search Tree (BST)?',
+          options: [
+            'All parent nodes must have exactly two children',
+            'Left child < parent, and right child > parent for every node',
+            'The tree must be balanced with AVL rotations at all times',
+            'Nodes must be arranged in descending order from the root'
+          ],
+          correctIndex: 1,
+          explanation: 'A BST requires every node in the left subtree to be strictly less than the node, and every node in the right subtree to be strictly greater.',
+          citationTimestamp: 0
+        },
+        {
+          id: 'q2',
+          question: 'What is the average time complexity for searching a key in a balanced BST?',
+          options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
+          correctIndex: 1,
+          explanation: 'In a balanced BST, each comparison halves the remaining search space, yielding O(log n) average time complexity.',
+          citationTimestamp: 650
+        },
+        {
+          id: 'q3',
+          question: 'When deleting a node that has TWO children, what replaces the deleted node?',
+          options: [
+            'The root of the tree',
+            'A null pointer',
+            'The in-order successor (minimum in right subtree) or predecessor',
+            'The left child directly'
+          ],
+          correctIndex: 2,
+          explanation: 'To maintain the BST ordering property, replace the deleted node with its in-order successor or in-order predecessor, then delete that leaf.',
+          citationTimestamp: 980
+        }
+      ]
+    };
+  }
+
+  return {
+    videoId: video.id,
+    title: `Concept Check: ${video.title}`,
+    questions: [
+      {
+        id: 'q1',
+        question: `What primary curriculum topic is explored in this lecture?`,
+        options: [
+          video.primaryTopicId ? video.primaryTopicId.replace('_', ' ').toUpperCase() : 'Computer Science',
+          'Entertainment Vlogging',
+          'Gaming Mechanics',
+          'Social Feed Optimization'
+        ],
+        correctIndex: 0,
+        explanation: 'The lecture teaches core principles and algorithmic mechanics of this domain.',
+        citationTimestamp: 0
+      }
+    ]
+  };
+}
+
+/**
  * Blueprint Section 4.2 & 10.4: Asynchronous Video Ingestion Job Pipeline
  */
 type IngestionCallback = (result: any) => void;

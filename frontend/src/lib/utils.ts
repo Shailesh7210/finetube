@@ -34,3 +34,16 @@ export function formatDate(dateString: string): string {
     return dateString;
   }
 }
+
+export function downloadMarkdownFile(filename: string, content: string): void {
+  if (typeof window === 'undefined') return;
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename.endsWith('.md') ? filename : `${filename}.md`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
