@@ -38,6 +38,13 @@ app.use(cors({
 
 app.use(express.json());
 
+// Blueprint Section 19.3: Request ID tracing & structured header
+app.use((req, res, next) => {
+  const reqId = (req.headers['x-request-id'] as string) || `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  res.setHeader('x-request-id', reqId);
+  next();
+});
+
 // In-memory data seed for instantaneous execution without requiring external DB
 let topics = [
   {
@@ -236,9 +243,80 @@ let reviewQueue: any[] = [
   }
 ];
 
-// Health check
+// Blueprint Section 22: Telemetry & Product Analytics Ingestion
+interface AnalyticsEvent {
+  id: string;
+  eventName: string;
+  properties: Record<string, any>;
+  userId?: string;
+  timestamp: string;
+}
+
+let analyticsEvents: AnalyticsEvent[] = [
+  {
+    id: 'evt_init_1',
+    eventName: 'feed_impression',
+    properties: { videoId: 'vid_react_useeffect', topicId: 'react_hooks', rank: 1, rankingVersion: 'v1.4' },
+    userId: 'user_default',
+    timestamp: new Date().toISOString()
+  },
+  {
+    id: 'evt_init_2',
+    eventName: 'video_opened',
+    properties: { videoId: 'vid_react_useeffect', topicId: 'react_hooks', sourceSurface: 'home_feed' },
+    userId: 'user_default',
+    timestamp: new Date().toISOString()
+  }
+];
+
+// Blueprint Section 19.3: Comprehensive Health Check Endpoint
 app.get('/api/v1/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'finetube-backend', timestamp: new Date().toISOString() });
+  const mem = process.memoryUsage();
+  res.json({
+    status: 'healthy',
+    service: 'finetube-backend',
+    version: '1.0.0',
+    uptimeSeconds: Math.floor(process.uptime()),
+    memory: {
+      heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+      rssMb: Math.round(mem.rss / 1024 / 1024)
+    },
+    activeJobsCount: jobsQueue.size,
+    reviewQueueCount: reviewQueue.filter(r => r.status === 'pending_review').length,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Blueprint Section 22.2: Product Analytics Event Ingestion
+app.post('/api/v1/analytics/events', (req: Request, res: Response) => {
+  const { eventName, properties, userId } = req.body;
+  if (!eventName) {
+    return res.status(400).json({ error: 'eventName is required' });
+  }
+
+  const newEvent: AnalyticsEvent = {
+    id: `evt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    eventName,
+    properties: properties || {},
+    userId: userId || 'user_default',
+    timestamp: new Date().toISOString()
+  };
+
+  analyticsEvents.unshift(newEvent);
+  if (analyticsEvents.length > 500) {
+    analyticsEvents = analyticsEvents.slice(0, 500); // Prevent unbounded memory usage
+  }
+
+  res.status(202).json({ success: true, eventId: newEvent.id });
+});
+
+app.get('/api/v1/analytics/events', (_req: Request, res: Response) => {
+  res.json({
+    data: {
+      totalEvents: analyticsEvents.length,
+      events: analyticsEvents.slice(0, 50)
+    }
+  });
 });
 
 // Authentication & Profile Endpoints
@@ -710,6 +788,7 @@ app.get('/api/v1/admin/metrics', (_req: Request, res: Response) => {
       totalJobsProcessed: jobsQueue.size,
       averageCurriculumRating: avgRating,
       totalCommunityRatings: totalRatings,
+      totalTelemetryEvents: analyticsEvents.length,
       feedHealthStatus: 'HEALTHY',
       observability: {
         apiUptime: '99.98%',

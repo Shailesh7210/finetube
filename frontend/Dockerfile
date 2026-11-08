@@ -1,0 +1,29 @@
+# ==========================================
+# FineTube Frontend Next.js Dockerfile
+# ==========================================
+
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+
+COPY --from=builder /app/package*.json ./
+RUN npm ci --only=production
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+
+# Non-root user for security (Blueprint §15.2)
+USER node
+
+EXPOSE 3000
+
+CMD ["npx", "next", "start", "-p", "3000"]
