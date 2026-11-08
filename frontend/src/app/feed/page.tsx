@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { store } from '@/lib/store';
 import { VideoCard } from '@/components/VideoCard';
 import { useAuth } from '@/lib/auth-context';
+import { analytics } from '@/lib/analytics';
 
 export default function FeedPage() {
   const { user } = useAuth();
@@ -14,6 +15,14 @@ export default function FeedPage() {
   
   const followedIds = user?.followedTopicIds || store.user.followedTopicIds;
   const followedTopics = topics.filter(t => followedIds.includes(t.id));
+
+  useEffect(() => {
+    analytics.track('feed_impression', {
+      totalItems: allFeedItems.length,
+      selectedTopicId,
+      followedTopicsCount: followedTopics.length
+    });
+  }, [selectedTopicId, allFeedItems.length, followedTopics.length]);
 
   const filteredFeed = selectedTopicId === 'all'
     ? allFeedItems

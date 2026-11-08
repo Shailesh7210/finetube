@@ -14,6 +14,7 @@ import { QuizPanel } from '@/components/workspace/QuizPanel';
 import { RatingModal } from '@/components/workspace/RatingModal';
 import { formatTimestamp } from '@/lib/utils';
 import { calculateBayesianRating } from '@/lib/ranking';
+import { analytics } from '@/lib/analytics';
 
 export default function WatchPage() {
   const params = useParams();
@@ -59,6 +60,12 @@ export default function WatchPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentTime]);
+
+  useEffect(() => {
+    if (videoId) {
+      analytics.track('video_opened', { videoId });
+    }
+  }, [videoId]);
 
   const video = store.getVideoById(videoId);
   if (!video) {

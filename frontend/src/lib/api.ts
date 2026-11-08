@@ -374,5 +374,38 @@ export const api = {
         cacheHitRatio: '94.2%'
       }
     };
+  },
+
+  // Telemetry & Health Checks (Blueprint §19.3 & §22)
+  async getHealth(): Promise<any> {
+    const remote = await safeFetch<any>('/health');
+    if (remote) return remote;
+    return {
+      status: 'healthy',
+      service: 'finetube-frontend-local',
+      version: '1.0.0',
+      uptimeSeconds: 3600,
+      memory: { heapUsedMb: 42, rssMb: 78 }
+    };
+  },
+
+  async getAnalyticsEvents(): Promise<any[]> {
+    const remote = await safeFetch<any>('/analytics/events');
+    if (remote && Array.isArray(remote.events)) return remote.events;
+    if (Array.isArray(remote)) return remote;
+    return [
+      {
+        id: 'evt_sample_1',
+        eventName: 'feed_impression',
+        properties: { count: 3, surface: 'home_feed' },
+        timestamp: new Date().toISOString()
+      },
+      {
+        id: 'evt_sample_2',
+        eventName: 'video_opened',
+        properties: { videoId: 'vid_react_useeffect', topicId: 'react_hooks' },
+        timestamp: new Date(Date.now() - 60000).toISOString()
+      }
+    ];
   }
 };
