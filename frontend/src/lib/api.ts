@@ -137,6 +137,94 @@ export const api = {
     return remote;
   },
 
+  // Blueprint Section 13.0: Concept Quiz
+  async fetchConceptQuiz(videoId: string): Promise<any> {
+    const remote = await safeFetch<any>('/ai/create-quiz', {
+      method: 'POST',
+      body: JSON.stringify({ videoId })
+    });
+    if (remote) return remote;
+
+    // Fallback grounded quiz
+    const video = store.getVideoById(videoId);
+    const title = (video?.title || '').toLowerCase();
+    if (videoId === 'vid_react_useeffect' || title.includes('useeffect')) {
+      return {
+        videoId,
+        title: 'React useEffect Concept Assessment',
+        questions: [
+          {
+            id: 'q1',
+            question: 'When does the cleanup function returned from useEffect execute?',
+            options: [
+              'Only when the browser window closes',
+              'Before re-running the effect with new dependencies and upon unmounting',
+              'Immediately after the component renders for the first time',
+              'Synchronously during virtual DOM reconciliation'
+            ],
+            correctIndex: 1,
+            explanation: 'The cleanup function prevents memory leaks by executing prior to re-running the effect with updated values, and on final unmount.',
+            citationTimestamp: 540
+          },
+          {
+            id: 'q2',
+            question: 'What happens if you supply an empty dependency array [] to useEffect?',
+            options: [
+              'The effect re-runs on every render cycle',
+              'The effect never executes',
+              'The effect executes only once after the initial render',
+              'React throws a compilation warning'
+            ],
+            correctIndex: 2,
+            explanation: 'An empty array indicates the effect depends on zero mutable variables, running only once after initial mount.',
+            citationTimestamp: 310
+          },
+          {
+            id: 'q3',
+            question: 'How does React compare dependencies between renders?',
+            options: [
+              'Deep recursive JSON serialization',
+              'Loose equality (==)',
+              'Shallow referential comparison via Object.is',
+              'Cryptographic hashing'
+            ],
+            correctIndex: 2,
+            explanation: 'React compares values using Object.is. Re-instantiated objects or functions trigger effects unless memoized.',
+            citationTimestamp: 120
+          }
+        ]
+      };
+    }
+
+    return {
+      videoId,
+      title: 'Binary Search Tree Concept Assessment',
+      questions: [
+        {
+          id: 'q1',
+          question: 'What is the fundamental invariant property of a Binary Search Tree (BST)?',
+          options: [
+            'All parent nodes must have exactly two children',
+            'Left child < parent, and right child > parent for every node',
+            'The tree must be balanced with AVL rotations at all times',
+            'Nodes must be arranged in descending order from the root'
+          ],
+          correctIndex: 1,
+          explanation: 'Every node in the left subtree must be strictly less than the node, and every node in the right subtree strictly greater.',
+          citationTimestamp: 0
+        },
+        {
+          id: 'q2',
+          question: 'What is the average time complexity for searching in a balanced BST?',
+          options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
+          correctIndex: 1,
+          explanation: 'Each comparison cuts the search space in half, resulting in O(log n) average time complexity.',
+          citationTimestamp: 650
+        }
+      ]
+    };
+  },
+
   // Ingestion
   async ingestVideo(urlOrId: string, primaryTopicId: string): Promise<{ jobId: string; status: string } | null> {
     const remote = await safeFetch<{ jobId: string; status: string }>('/videos/ingest', {

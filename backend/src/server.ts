@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import { calculateTopicScore } from './services/rankingService.js';
-import { answerGroundedQuestion, generateStructuredNotesForVideo, queueVideoIngestion, onIngestionComplete, jobsQueue } from './services/aiService.js';
+import { answerGroundedQuestion, generateStructuredNotesForVideo, generateConceptQuizForVideo, queueVideoIngestion, onIngestionComplete, jobsQueue } from './services/aiService.js';
 
 dotenv.config();
 
@@ -606,6 +606,18 @@ app.post('/api/v1/ai/generate-notes', (req: Request, res: Response) => {
 
   const notesDoc = generateStructuredNotesForVideo(video);
   res.json({ data: notesDoc });
+});
+
+// Blueprint Section 13.0: Grounded Concept Quiz
+app.post('/api/v1/ai/create-quiz', (req: Request, res: Response) => {
+  const { videoId } = req.body;
+  const video = videos.find(v => v.id === videoId);
+  if (!video) {
+    return res.status(404).json({ error: 'Video not found' });
+  }
+
+  const quiz = generateConceptQuizForVideo(video);
+  res.json({ data: quiz });
 });
 
 app.post('/api/v1/videos/ingest', (req: Request, res: Response) => {

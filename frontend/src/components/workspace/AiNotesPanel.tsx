@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { Download } from 'lucide-react';
 import { Video } from '@/lib/types';
-import { formatTimestamp } from '@/lib/utils';
+import { formatTimestamp, downloadMarkdownFile } from '@/lib/utils';
 import { store } from '@/lib/store';
 
 interface AiNotesPanelProps {
@@ -57,17 +58,43 @@ export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
     setTimeout(() => setSaved(false), 2000);
   };
 
+  const handleExportMarkdown = () => {
+    const content = [
+      `# AI Structured Notes: ${video.title}`,
+      `**Curriculum Topic**: ${video.primaryTopicId}`,
+      `**Generated On**: ${new Date().toLocaleDateString()}`,
+      `\n---\n`,
+      ...sections.map(s => [
+        `### ${s.title} [${formatTimestamp(s.timestamp)}]`,
+        `${s.text}`,
+        s.code ? `\n\`\`\`javascript\n${s.code}\n\`\`\`\n` : ''
+      ].join('\n'))
+    ].join('\n');
+
+    downloadMarkdownFile(`finetube-${video.id}-ai-summary.md`, content);
+  };
+
   return (
     <div className="flex flex-col h-full space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-zinc-400">Structured Summary</span>
-        <button
-          onClick={handleSave}
-          disabled={saved}
-          className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 hover:text-white transition-colors"
-        >
-          {saved ? 'Saved to Library' : 'Save Summary'}
-        </button>
+      <div className="flex items-center justify-between text-xs pb-1 border-b border-zinc-800/80">
+        <span className="text-zinc-400 font-semibold">Structured Summary</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportMarkdown}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 hover:text-white transition-colors"
+            title="Download Summary as Markdown (.md)"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export (.md)</span>
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saved}
+            className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 hover:text-white transition-colors"
+          >
+            {saved ? 'Saved to Library' : 'Save to Library'}
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-3 pr-1">
