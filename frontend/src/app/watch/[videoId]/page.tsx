@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
-import { Star, Bookmark, Check } from 'lucide-react';
+import { Star, Bookmark, Check, Keyboard, X } from 'lucide-react';
 import { store } from '@/lib/store';
 import { VideoPlayer, VideoPlayerRef } from '@/components/workspace/VideoPlayer';
 import { PersonalNotesPanel } from '@/components/workspace/PersonalNotesPanel';
@@ -24,6 +24,41 @@ export default function WatchPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        return;
+      }
+
+      if (e.key === '?') {
+        setShowShortcutsModal(prev => !prev);
+      } else if (e.key === '1') {
+        setActiveTab('notes');
+      } else if (e.key === '2') {
+        setActiveTab('code');
+      } else if (e.key === '3') {
+        setActiveTab('quiz');
+      } else if (e.key === '4') {
+        setActiveTab('ai_notes');
+      } else if (e.key === '5') {
+        setActiveTab('ask_ai');
+      } else if (e.key === '6') {
+        setActiveTab('chapters');
+      } else if (e.key.toLowerCase() === 'j') {
+        if (playerRef.current) playerRef.current.seekTo(Math.max(0, currentTime - 10));
+      } else if (e.key.toLowerCase() === 'l') {
+        if (playerRef.current) playerRef.current.seekTo(currentTime + 10);
+      } else if (e.key.toLowerCase() === 'r') {
+        setIsRatingModalOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentTime]);
 
   const video = store.getVideoById(videoId);
   if (!video) {
@@ -241,11 +276,89 @@ export default function WatchPage() {
         </div>
       </div>
 
+      {/* Floating Keyboard Shortcuts Trigger */}
+      <div className="pt-4 flex items-center justify-between text-xs text-zinc-500 border-t border-zinc-900 mt-6">
+        <button
+          onClick={() => setShowShortcutsModal(true)}
+          className="inline-flex items-center gap-1.5 font-mono text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
+        >
+          <kbd className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400">?</kbd>
+          <span>Accessible Keyboard Shortcuts</span>
+        </button>
+
+        <span className="text-[11px] text-zinc-600 font-mono">
+          FineTube Focused Workspace v1.0
+        </span>
+      </div>
+
       <RatingModal
         video={video}
         isOpen={isRatingModalOpen}
         onClose={() => setIsRatingModalOpen(false)}
       />
+
+      {/* Keyboard Shortcuts Modal */}
+      {showShortcutsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-xl p-5 text-zinc-100 shadow-2xl relative space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Keyboard className="w-4 h-4 text-indigo-400" />
+                <span>Keyboard Shortcuts (Blueprint §9.1)</span>
+              </h3>
+              <button
+                onClick={() => setShowShortcutsModal(false)}
+                className="text-zinc-500 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
+                <span className="text-zinc-400">Switch to Notes</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">1</kbd>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
+                <span className="text-zinc-400">Switch to Code Sandbox</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">2</kbd>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
+                <span className="text-zinc-400">Switch to Concept Quiz</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">3</kbd>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
+                <span className="text-zinc-400">Switch to AI Notes</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">4</kbd>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
+                <span className="text-zinc-400">Switch to Ask AI</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">5</kbd>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
+                <span className="text-zinc-400">Seek Backward / Forward 10s</span>
+                <div className="flex items-center gap-1 font-mono text-[10px]">
+                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800">J</kbd>
+                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800">L</kbd>
+                </div>
+              </div>
+              <div className="flex items-center justify-between py-1">
+                <span className="text-zinc-400">Rate Video & Coherence</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">R</kbd>
+              </div>
+            </div>
+
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => setShowShortcutsModal(false)}
+                className="w-full py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
