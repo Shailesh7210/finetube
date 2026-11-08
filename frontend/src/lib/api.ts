@@ -2,11 +2,26 @@ import { store } from './store';
 import { Video, Topic, Playlist, Note } from './types';
 import { calculateBayesianRating } from './ranking';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+function getApiBase(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, '');
+  }
+  // When in browser on a production domain without explicit NEXT_PUBLIC_API_URL,
+  // use relative '/api/v1' for reverse-proxy setups (Nginx/Vercel rewrites)
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return '/api/v1';
+  }
+  return 'http://localhost:5000/api/v1';
+}
 
-async function safeFetch<T>(url: string, options?: RequestInit): Promise<T | null> {
+async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
   try {
-    const res = await fetch(`${API_BASE}${url}`, {
+    const base = getApiBase();
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const fullUrl = `${base}${cleanEndpoint}`;
+
+    const res = await fetch(fullUrl, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -17,6 +32,7 @@ async function safeFetch<T>(url: string, options?: RequestInit): Promise<T | nul
     const json = await res.json();
     return json.data ?? json;
   } catch {
+    // Resilient fallback: network error or backend offline falls back to in-memory store seamlessly
     return null;
   }
 }

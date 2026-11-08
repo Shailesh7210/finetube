@@ -9,8 +9,33 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || 'finetube-local-dev-jwt-secret-key-32chars';
+const DAILY_SANDBOX_QUOTA = parseInt(process.env.DAILY_SANDBOX_QUOTA || '50', 10);
 
-app.use(cors({ origin: '*' }));
+// Resilient CORS configuration supporting production deployment domains or open dev
+const allowedOrigins = (process.env.CORS_ORIGIN || '*')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // In dev or preview environments, permit all origins to prevent broken UI
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked request from origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
 app.use(express.json());
 
 // In-memory data seed for instantaneous execution without requiring external DB
@@ -696,14 +721,14 @@ app.get('/api/v1/admin/metrics', (_req: Request, res: Response) => {
 });
 
 // Developer Sandbox & Code Execution (Blueprint Section 8.3 & 8.4)
-let userExecutionQuota = 50;
+let userExecutionQuota = DAILY_SANDBOX_QUOTA;
 
 app.get('/api/v1/workspaces/quota', (_req: Request, res: Response) => {
   res.json({
     data: {
-      dailyQuota: 50,
+      dailyQuota: DAILY_SANDBOX_QUOTA,
       remaining: userExecutionQuota,
-      usedToday: 50 - userExecutionQuota
+      usedToday: DAILY_SANDBOX_QUOTA - userExecutionQuota
     }
   });
 });
