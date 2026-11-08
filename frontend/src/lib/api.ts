@@ -240,5 +240,35 @@ export const api = {
     const remote = await safeFetch<any>('/workspaces/quota');
     if (remote) return remote;
     return { dailyQuota: 50, remaining: 48, usedToday: 2 };
+  },
+
+  // Feed Feedback (Blueprint Section 2.3 & 5.5)
+  async sendFeedFeedback(videoId: string, feedbackType: 'not_relevant' | 'already_know' | 'more_like_this' | 'mute_topic', topicId?: string): Promise<boolean> {
+    const remote = await safeFetch<any>('/feed/feedback', {
+      method: 'POST',
+      body: JSON.stringify({ videoId, feedbackType, topicId })
+    });
+    return !!remote;
+  },
+
+  // Admin Metrics (Blueprint Section 14.7 & 16)
+  async getAdminMetrics(): Promise<any> {
+    const remote = await safeFetch<any>('/admin/metrics');
+    if (remote) return remote;
+    return {
+      totalVideos: store.getVideos().length,
+      totalTopics: store.getTopics().length,
+      totalPlaylists: store.getPlaylists().length,
+      totalReviewsPending: 1,
+      totalJobsProcessed: 2,
+      averageCurriculumRating: 4.88,
+      totalCommunityRatings: 98,
+      feedHealthStatus: 'HEALTHY',
+      observability: {
+        apiUptime: '99.98%',
+        p95LatencyMs: 38,
+        cacheHitRatio: '94.2%'
+      }
+    };
   }
 };
