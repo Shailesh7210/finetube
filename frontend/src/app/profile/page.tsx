@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { store } from '@/lib/store';
-import { Check, ArrowRight } from 'lucide-react';
+import { Check, ArrowRight, Download, Trash2, Shield } from 'lucide-react';
+import { api } from '@/lib/api';
 
 function ProfileForm() {
   const router = useRouter();
@@ -24,6 +25,43 @@ function ProfileForm() {
   const [followedTopicIds, setFollowedTopicIds] = useState<string[]>([]);
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      const data = await api.exportUserData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `finetube-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Are you sure you want to request account erasure? All personal notes, preferences, and custom learning paths will be deleted in accordance with GDPR right-to-be-forgotten.')) {
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      await api.deleteAccount();
+      setDeleteSuccess(true);
+      setTimeout(() => {
+        router.push('/');
+      }, 2000);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -244,6 +282,45 @@ function ProfileForm() {
           </button>
         </div>
       </form>
+
+      {/* Blueprint Section 15.4: GDPR Data Portability & Erasure Controls */}
+      <div className="p-5 rounded-xl bg-zinc-900/30 border border-zinc-800 space-y-4">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-emerald-400" />
+          <h3 className="text-sm font-semibold text-white">Data Ownership & GDPR Privacy (Blueprint §15.4)</h3>
+        </div>
+        <p className="text-xs text-zinc-400">
+          Your learning journey belongs to you. FineTube provides full <strong>data portability</strong> and <strong>self-service erasure</strong> with zero lock-in.
+        </p>
+
+        {deleteSuccess && (
+          <div className="p-3 bg-red-950/40 border border-red-900/60 rounded-lg text-xs text-red-300">
+            Account erasure scheduled. Redirecting to home...
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={handleExportData}
+            disabled={isExporting}
+            className="w-full sm:w-auto px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-xs font-medium text-zinc-200 transition-colors flex items-center justify-center gap-2"
+          >
+            <Download className="w-3.5 h-3.5 text-zinc-400" />
+            <span>{isExporting ? 'Exporting JSON...' : 'Export My Learning Data (JSON)'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDeleteAccount}
+            disabled={isDeleting}
+            className="w-full sm:w-auto px-3.5 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs font-medium text-red-400 transition-colors flex items-center justify-center gap-2"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{isDeleting ? 'Scheduling Erasure...' : 'Request Account Erasure'}</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

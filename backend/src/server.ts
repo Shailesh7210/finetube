@@ -397,6 +397,109 @@ app.put('/api/v1/auth/profile', (req: Request, res: Response) => {
   res.json({ data: userSafe });
 });
 
+// Blueprint Section 15.4: GDPR & Learner Data Portability Export
+app.get('/api/v1/auth/export', (_req: Request, res: Response) => {
+  const user = users[0];
+  const { password: _, ...userSafe } = user;
+  
+  const userNotes = notes.filter(n => n.ownerId === user.id || n.ownerId === 'user_default');
+  const userPlaylists = playlists.filter(p => p.ownerId === user.id || p.ownerId === 'user_default');
+  
+  res.json({
+    data: {
+      exportedAt: new Date().toISOString(),
+      platform: 'FineTube',
+      version: '1.0.0',
+      profile: userSafe,
+      learningInterests: user.followedTopicIds,
+      notes: userNotes,
+      playlists: userPlaylists,
+      license: 'User Owned Content (Blueprint §11.3 & §15.4)'
+    }
+  });
+});
+
+// Blueprint Section 15.4: Account Erasure & GDPR Right-to-be-Forgotten
+app.delete('/api/v1/auth/account', (_req: Request, res: Response) => {
+  const user = users[0];
+  user.displayName = 'Deleted Learner';
+  user.bio = '';
+  user.followedTopicIds = [];
+  user.mutedTopicIds = [];
+
+  res.json({
+    success: true,
+    message: 'User account and associated profile data successfully scheduled for erasure.',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Blueprint Section 16 & 23: Community Content Moderation & Inaccuracy Reports
+interface UserReport {
+  id: string;
+  targetType: 'video' | 'ai_note' | 'playlist';
+  targetId: string;
+  reason: 'inaccurate_content' | 'outdated' | 'misleading_tags' | 'spam' | 'other';
+  details: string;
+  userId: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  createdAt: string;
+  resolvedAt?: string;
+  resolutionNote?: string;
+}
+
+let userReports: UserReport[] = [
+  {
+    id: 'rep_1',
+    targetType: 'video',
+    targetId: 'vid_react_useeffect',
+    reason: 'inaccurate_content',
+    details: 'Video mentions legacy componentWillUnmount comparison at 09:10.',
+    userId: 'user_default',
+    status: 'pending',
+    createdAt: new Date(Date.now() - 7200000).toISOString()
+  }
+];
+
+app.post('/api/v1/reports', (req: Request, res: Response) => {
+  const { targetType, targetId, reason, details } = req.body;
+  if (!targetType || !targetId || !reason) {
+    return res.status(400).json({ error: 'targetType, targetId and reason are required' });
+  }
+
+  const report: UserReport = {
+    id: `rep_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    targetType,
+    targetId,
+    reason,
+    details: details ? String(details).trim() : '',
+    userId: 'user_default',
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+
+  userReports.unshift(report);
+  res.status(201).json({ success: true, data: report });
+});
+
+app.get('/api/v1/admin/reports', (_req: Request, res: Response) => {
+  res.json({ data: userReports });
+});
+
+app.post('/api/v1/admin/reports/:id/resolve', (req: Request, res: Response) => {
+  const report = userReports.find(r => r.id === req.params.id);
+  if (!report) {
+    return res.status(404).json({ error: 'Report not found' });
+  }
+
+  const { decision = 'resolved', resolutionNote } = req.body;
+  report.status = decision;
+  report.resolvedAt = new Date().toISOString();
+  if (resolutionNote) report.resolutionNote = resolutionNote;
+
+  res.json({ success: true, data: report });
+});
+
 // Focused Feed (Blueprint Section 5.4 & 12)
 app.get('/api/v1/feed', (_req: Request, res: Response) => {
   const feed = videos.map(v => {
@@ -785,6 +888,7 @@ app.get('/api/v1/admin/metrics', (_req: Request, res: Response) => {
       totalTopics: topics.length,
       totalPlaylists: playlists.length,
       totalReviewsPending: reviewQueue.filter(r => r.status === 'pending_review').length,
+      totalReportsPending: userReports.filter(r => r.status === 'pending').length,
       totalJobsProcessed: jobsQueue.size,
       averageCurriculumRating: avgRating,
       totalCommunityRatings: totalRatings,

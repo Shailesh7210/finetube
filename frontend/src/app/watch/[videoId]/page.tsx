@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
-import { Star, Bookmark, Check, Keyboard, X } from 'lucide-react';
+import { Star, Bookmark, Check, Keyboard, X, Flag } from 'lucide-react';
 import { store } from '@/lib/store';
 import { VideoPlayer, VideoPlayerRef } from '@/components/workspace/VideoPlayer';
 import { PersonalNotesPanel } from '@/components/workspace/PersonalNotesPanel';
@@ -12,6 +12,7 @@ import { AskAiPanel } from '@/components/workspace/AskAiPanel';
 import { CodeEditorSandbox } from '@/components/workspace/CodeEditorSandbox';
 import { QuizPanel } from '@/components/workspace/QuizPanel';
 import { RatingModal } from '@/components/workspace/RatingModal';
+import { ReportModal } from '@/components/workspace/ReportModal';
 import { formatTimestamp } from '@/lib/utils';
 import { calculateBayesianRating } from '@/lib/ranking';
 import { analytics } from '@/lib/analytics';
@@ -24,6 +25,7 @@ export default function WatchPage() {
   const [activeTab, setActiveTab] = useState<'notes' | 'code' | 'quiz' | 'ai_notes' | 'ask_ai' | 'chapters'>('notes');
   const [currentTime, setCurrentTime] = useState(0);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
@@ -148,6 +150,14 @@ export default function WatchPage() {
                   className="px-2.5 py-1.5 rounded-md text-xs font-medium text-white bg-zinc-800 hover:bg-zinc-700 transition-colors"
                 >
                   Rate
+                </button>
+                <button
+                  onClick={() => setIsReportModalOpen(true)}
+                  title="Report inaccuracy or misleading content"
+                  className="p-1.5 rounded-md text-zinc-400 hover:text-amber-400 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
+                  aria-label="Report inaccuracy"
+                >
+                  <Flag className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -302,6 +312,14 @@ export default function WatchPage() {
         video={video}
         isOpen={isRatingModalOpen}
         onClose={() => setIsRatingModalOpen(false)}
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        targetType="video"
+        targetId={video.id}
+        targetTitle={video.title}
       />
 
       {/* Keyboard Shortcuts Modal */}
