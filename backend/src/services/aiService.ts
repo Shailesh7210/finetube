@@ -10,6 +10,35 @@ export interface GroundedAnswer {
   isCoveredInVideo: boolean;
   citations: Citation[];
   suggestedFollowUp?: string;
+  isInjectionAttemptBlocked?: boolean;
+}
+
+/**
+ * Blueprint Section 15.3: Prompt Injection & Untrusted Input Sanitizer
+ * Neutralizes prompt override commands, delimiters, and adversarial patterns.
+ */
+const INJECTION_PATTERNS = [
+  /ignore\s+(all\s+)?(previous|prior|above)\s+instructions/i,
+  /system\s+prompt/i,
+  /disregard\s+(all\s+)?(rules|safety|guidelines)/i,
+  /you\s+are\s+now\s+(an?\s+)?(unfiltered|evil|jailbroken|dan)/i,
+  /<\|im_start\|>/i,
+  /<\|im_end\|>/i,
+  /\[system\]/i,
+  /reveal\s+your\s+hidden\s+prompt/i
+];
+
+export function detectPromptInjection(text: string): boolean {
+  if (!text) return false;
+  return INJECTION_PATTERNS.some(regex => regex.test(text));
+}
+
+export function sanitizeUntrustedText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/[<>]/g, '') // Strip markup delimiters
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Strip control characters
+    .trim();
 }
 
 export interface IngestionJob {
@@ -30,7 +59,19 @@ export const jobsQueue: Map<string, IngestionJob> = new Map();
  * Answers strictly using authorized transcript segments and chapters with timestamp citations.
  */
 export function answerGroundedQuestion(video: any, question: string): GroundedAnswer {
-  const q = question.toLowerCase().trim();
+  // Blueprint Section 15.3: Security Check for Prompt Manipulation
+  if (detectPromptInjection(question)) {
+    return {
+      question: sanitizeUntrustedText(question),
+      answer: 'This question contains instruction-override or jailbreak patterns that violate FineTube security guardrails (Blueprint §15.3). FineTube AI strictly answers questions grounded in verified lecture material.',
+      isCoveredInVideo: false,
+      citations: [],
+      isInjectionAttemptBlocked: true
+    };
+  }
+
+  const cleanQuestion = sanitizeUntrustedText(question);
+  const q = cleanQuestion.toLowerCase().trim();
   const title = video.title.toLowerCase();
   const desc = (video.description || '').toLowerCase();
   const chapters = video.chapters || [];

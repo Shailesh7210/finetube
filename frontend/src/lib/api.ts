@@ -407,5 +407,56 @@ export const api = {
         timestamp: new Date(Date.now() - 60000).toISOString()
       }
     ];
+  },
+
+  // Blueprint §15.4: GDPR & Learner Data Portability Export
+  async exportUserData(): Promise<any> {
+    const remote = await safeFetch<any>('/auth/export');
+    if (remote) return remote;
+    return {
+      exportedAt: new Date().toISOString(),
+      platform: 'FineTube',
+      profile: store.user,
+      notes: store.getNotes(),
+      playlists: store.getPlaylists()
+    };
+  },
+
+  async deleteAccount(): Promise<boolean> {
+    const remote = await safeFetch<any>('/auth/account', { method: 'DELETE' });
+    return !!remote;
+  },
+
+  // Blueprint §16 & §23: Community Content Moderation & Reports
+  async submitReport(data: { targetType: 'video' | 'ai_note' | 'playlist'; targetId: string; reason: string; details: string }): Promise<boolean> {
+    const remote = await safeFetch<any>('/reports', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return !!remote;
+  },
+
+  async getAdminReports(): Promise<any[]> {
+    const remote = await safeFetch<any[]>('/admin/reports');
+    if (remote && Array.isArray(remote)) return remote;
+    return [
+      {
+        id: 'rep_sample_1',
+        targetType: 'video',
+        targetId: 'vid_react_useeffect',
+        reason: 'inaccurate_content',
+        details: 'Timestamp 09:10 refers to legacy lifecycle methods.',
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      }
+    ];
+  },
+
+  async resolveAdminReport(id: string, decision: 'resolved' | 'dismissed', resolutionNote?: string): Promise<boolean> {
+    const remote = await safeFetch<any>(`/admin/reports/${id}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ decision, resolutionNote })
+    });
+    return !!remote;
   }
 };

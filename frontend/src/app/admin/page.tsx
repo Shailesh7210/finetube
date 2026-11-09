@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Check, Clock, AlertTriangle, ArrowLeft, Activity, Database, Cpu, Radio, Server } from 'lucide-react';
+import { ShieldCheck, Check, Clock, AlertTriangle, ArrowLeft, Activity, Database, Cpu, Radio, Server, Flag } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export default function AdminOperationsPage() {
@@ -11,16 +11,18 @@ export default function AdminOperationsPage() {
   const [metrics, setMetrics] = useState<any>(null);
   const [health, setHealth] = useState<any>(null);
   const [telemetryEvents, setTelemetryEvents] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'metrics' | 'queue' | 'jobs' | 'telemetry'>('metrics');
+  const [reports, setReports] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'metrics' | 'queue' | 'jobs' | 'telemetry' | 'reports'>('metrics');
 
   useEffect(() => {
     async function loadData() {
-      const [q, j, m, h, t] = await Promise.all([
+      const [q, j, m, h, t, rep] = await Promise.all([
         api.getReviewQueue(),
         api.getAdminJobs(),
         api.getAdminMetrics(),
         api.getHealth(),
-        api.getAnalyticsEvents()
+        api.getAnalyticsEvents(),
+        api.getAdminReports()
       ]);
       setReviewQueue(q.length > 0 ? q : [
         {
@@ -45,9 +47,15 @@ export default function AdminOperationsPage() {
       setMetrics(m);
       setHealth(h);
       setTelemetryEvents(t);
+      setReports(rep);
     }
     loadData();
   }, []);
+
+  const handleResolveReport = async (id: string, decision: 'resolved' | 'dismissed') => {
+    await api.resolveAdminReport(id, decision);
+    setReports(prev => prev.map(r => r.id === id ? { ...r, status: decision } : r));
+  };
 
   const handleResolveReview = async (id: string, decision: 'approved' | 'rejected') => {
     setReviewQueue(prev => prev.map(item => item.id === id ? { ...item, status: decision } : item));
@@ -109,6 +117,16 @@ export default function AdminOperationsPage() {
           }`}
         >
           Pilot Telemetry ({telemetryEvents.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('reports')}
+          className={`px-3 py-1 rounded-md transition-colors ${
+            activeTab === 'reports'
+              ? 'bg-zinc-800 text-white font-semibold'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          User Reports ({reports.filter(r => r.status === 'pending').length})
         </button>
       </div>
 
@@ -322,6 +340,71 @@ export default function AdminOperationsPage() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'reports' && (
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Flag className="w-4 h-4 text-amber-400" />
+              <span className="text-sm font-semibold text-white">Community Inaccuracy & Moderation Queue</span>
+            </div>
+            <span className="text-xs font-mono text-zinc-400">
+              {reports.filter(r => r.status === 'pending').length} pending review
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {reports.length === 0 ? (
+              <p className="text-xs text-zinc-500 py-8 text-center">No community reports submitted.</p>
+            ) : (
+              reports.map(rep => (
+                <div
+                  key={rep.id}
+                  className="p-4 rounded-xl bg-zinc-900/30 border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="px-1.5 py-0.5 rounded font-mono text-[10px] uppercase font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                        {rep.reason.replace('_', ' ')}
+                      </span>
+                      <span className="text-zinc-500 font-mono text-[11px]">{rep.targetId}</span>
+                      <span className="text-[10px] text-zinc-500">
+                        {new Date(rep.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-300">
+                      {rep.details || 'No additional explanation provided.'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {rep.status === 'pending' ? (
+                      <>
+                        <button
+                          onClick={() => handleResolveReport(rep.id, 'resolved')}
+                          className="px-2.5 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-colors flex items-center gap-1"
+                        >
+                          <Check className="w-3.5 h-3.5" /> Resolve
+                        </button>
+                        <button
+                          onClick={() => handleResolveReport(rep.id, 'dismissed')}
+                          className="px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-xs transition-colors"
+                        >
+                          Dismiss
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-xs font-mono font-semibold text-zinc-500 uppercase">
+                        {rep.status}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
