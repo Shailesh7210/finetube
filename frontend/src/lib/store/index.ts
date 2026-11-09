@@ -30,6 +30,7 @@ class StoreState {
   user: UserProfile = { ...INITIAL_USER_PROFILE };
   currentUser: UserProfile | null = null;
   ratings: VideoRating[] = [];
+  discoveredVideos: Map<string, Video> = new Map();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -165,7 +166,19 @@ class StoreState {
   }
 
   getVideoById(id: string): Video | undefined {
-    return this.videos.find(v => v.id === id);
+    return this.videos.find(v => v.id === id || v.providerVideoId === id) || 
+           this.discoveredVideos.get(id);
+  }
+
+  addDiscoveredVideo(video: Video): void {
+    this.discoveredVideos.set(video.id, video);
+    if (video.providerVideoId) {
+      this.discoveredVideos.set(video.providerVideoId, video);
+    }
+    const exists = this.videos.some(v => v.id === video.id || (video.providerVideoId && v.providerVideoId === video.providerVideoId));
+    if (!exists) {
+      this.videos.unshift(video);
+    }
   }
 
   // Feed: Blueprint Section 5.5 - Focused feed based on explicit followed topics
