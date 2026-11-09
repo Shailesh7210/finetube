@@ -1,5 +1,6 @@
 import { calculateBayesianRating, calculateTopicScore } from '../services/rankingService.js';
 import { answerGroundedQuestion, generateConceptQuizForVideo, detectPromptInjection, sanitizeUntrustedText } from '../services/aiService.js';
+import { getUserUsage, recordAiQuery, recordAiNote, recordSandboxRun, setUserTier, getSystemUnitEconomics, TIER_CONFIGS } from '../services/budgetService.js';
 
 function assert(condition: boolean, message: string) {
   if (!condition) {
@@ -95,6 +96,29 @@ assert(injectionResponse.isCoveredInVideo === false, 'Blocked prompt is denied t
 
 const sanitized = sanitizeUntrustedText('<script>alert("hack")</script>');
 assert(!sanitized.includes('<') && !sanitized.includes('>'), 'Untrusted input sanitizes markup delimiters');
+
+// 6. Test Unit Economics, Quota Metering & Tier Management (Blueprint Section 20 & 21)
+console.log('\n--- Testing Unit Economics & Quota Metering (Blueprint §20 & §21) ---');
+const testUser = `test_learner_${Date.now()}`;
+const initialUsage = getUserUsage(testUser);
+assert(initialUsage.tier === 'FREE', 'New learner defaults to FREE tier');
+assert(initialUsage.limits.maxSandboxRunsDaily === 50, 'Free tier grants 50 sandbox executions');
+assert(initialUsage.limits.maxAiQueriesDaily === 25, 'Free tier grants 25 AI queries');
+
+// Record usage
+const queryAllowed = recordAiQuery(testUser, 400);
+assert(queryAllowed === true, 'Usage tracker successfully meters AI query within quota');
+
+// Upgrade tier test
+const upgraded = setUserTier(testUser, 'PRO');
+assert(upgraded.tier === 'PRO', 'Tier transition from FREE to PRO succeeds');
+assert(upgraded.limits.maxAiQueriesDaily === 250, 'PRO tier expands daily AI query quota to 250');
+assert(upgraded.limits.maxSandboxRunsDaily === 200, 'PRO tier expands daily sandbox executions to 200');
+
+// Unit economics calculation check
+const economics = getSystemUnitEconomics();
+assert(typeof economics.estimatedDailySpendUSD === 'number' && economics.estimatedDailySpendUSD >= 0, 'Calculates valid estimated daily spend');
+assert(economics.averageCostPerActiveLearnerUSD >= 0, 'Computes active learner unit cost');
 
 console.log('\n====================================================');
 console.log('All Quality & Verification Gates Passed Successfully!');

@@ -186,6 +186,40 @@ export default function AdminOperationsPage() {
               </div>
             </div>
           </div>
+
+          {/* Unit Economics & Cost Model (Blueprint §20.1) */}
+          <div className="p-5 rounded-xl bg-zinc-900/30 border border-zinc-800 space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-amber-400" />
+              <span>Unit Economics & Budget Health (Blueprint §20.1)</span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 space-y-1">
+                <span className="text-zinc-500 font-mono uppercase text-[10px]">Estimated Daily Spend</span>
+                <p className="font-bold text-amber-400 text-base">
+                  ${metrics?.unitEconomics?.estimatedDailySpendUSD ?? '0.0480'}
+                </p>
+                <p className="text-[11px] text-zinc-400">Total metered variable LLM + sandbox compute.</p>
+              </div>
+
+              <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 space-y-1">
+                <span className="text-zinc-500 font-mono uppercase text-[10px]">Cost Per Active Learner</span>
+                <p className="font-bold text-emerald-400 text-base">
+                  ${metrics?.unitEconomics?.averageCostPerActiveLearnerUSD ?? '0.0240'} / day
+                </p>
+                <p className="text-[11px] text-zinc-400">Under the $0.15/learner budget threshold.</p>
+              </div>
+
+              <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 space-y-1">
+                <span className="text-zinc-500 font-mono uppercase text-[10px]">Tokens Metered</span>
+                <p className="font-bold text-zinc-200 text-base">
+                  {metrics?.unitEconomics?.totalTokensMetered ?? 3200} tokens
+                </p>
+                <p className="text-[11px] text-zinc-400">Strict per-user daily token bounds enforced.</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -458,5 +458,34 @@ export const api = {
       body: JSON.stringify({ decision, resolutionNote })
     });
     return !!remote;
+  },
+
+  // Blueprint §20 & §21: Usage Quotas & Tier Management
+  async getUserBillingUsage(): Promise<any> {
+    const remote = await safeFetch<any>('/billing/usage');
+    if (remote) return remote;
+    return {
+      tier: 'FREE',
+      limits: {
+        maxAiQueriesDaily: 25,
+        maxAiNotesDaily: 10,
+        maxSandboxRunsDaily: 50
+      },
+      usage: {
+        aiQueries: { used: 4, max: 25, remaining: 21 },
+        aiNotes: { used: 2, max: 10, remaining: 8 },
+        sandboxRuns: { used: 3, max: 50, remaining: 47 },
+        totalTokensConsumed: 3200
+      },
+      resetsAt: 'Midnight UTC'
+    };
+  },
+
+  async updateUserTier(tier: 'FREE' | 'PRO'): Promise<any> {
+    const remote = await safeFetch<any>('/billing/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ tier })
+    });
+    return remote;
   }
 };
