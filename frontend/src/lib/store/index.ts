@@ -181,15 +181,57 @@ class StoreState {
     }
   }
 
-  // Feed: Blueprint Section 5.5 - Focused feed based on explicit followed topics
+  // Feed: Multi-Subject & Interest-Aware Focused Feed (Blueprint §5.5)
   getFocusedFeed(): { video: Video; rankScore: number; reasonCodes: string[]; topic?: Topic }[] {
-    const followedSet = new Set(this.user.followedTopicIds);
-    const mutedSet = new Set(this.user.mutedTopicIds);
+    const followedSet = new Set(this.user.followedTopicIds || []);
+    const mutedSet = new Set(this.user.mutedTopicIds || []);
+    const followedSubjects = new Set(this.user.followedSubjectIds || []);
+    const customInterests = (this.user.customInterests || []).map(t => t.toLowerCase().trim()).filter(Boolean);
 
-    const candidates = this.videos.filter(v => 
-      !mutedSet.has(v.primaryTopicId) &&
-      (followedSet.size === 0 || followedSet.has(v.primaryTopicId) || v.secondaryTopicIds.some(st => followedSet.has(st)))
-    );
+    // Expand followed topics with topics belonging to followed subjects
+    if (followedSubjects.size > 0) {
+      this.topics.forEach(t => {
+        if (followedSubjects.has(t.subjectId)) {
+          followedSet.add(t.id);
+        }
+      });
+    }
+
+    // Filter candidates
+    let candidates = this.videos.filter(v => {
+      // 1. Never show muted topics
+      if (mutedSet.has(v.primaryTopicId)) return false;
+
+      // 2. If no preferences set, show all unmuted
+      if (followedSet.size === 0 && customInterests.length === 0) {
+        return true;
+      }
+
+      // 3. Check direct followed topic or secondary topic match
+      if (followedSet.has(v.primaryTopicId) || v.secondaryTopicIds?.some(st => followedSet.has(st))) {
+        return true;
+      }
+
+      // 4. Check custom interest tag match against title, description, or topic
+      if (customInterests.length > 0) {
+        const text = `${v.title} ${v.description} ${v.primaryTopicId}`.toLowerCase();
+        if (customInterests.some(tag => text.includes(tag))) {
+          return true;
+        }
+      }
+
+      // 5. In strict focus mode, suppress anything not matching
+      if (this.user.strictFocusMode !== false) {
+        return false;
+      }
+
+      return false;
+    });
+
+    // Fallback: If strict filters yield zero videos, show top universal videos so user is never empty
+    if (candidates.length === 0) {
+      candidates = this.videos.filter(v => !mutedSet.has(v.primaryTopicId));
+    }
 
     return candidates.map(v => {
       const topic = this.topics.find(t => t.id === v.primaryTopicId);
