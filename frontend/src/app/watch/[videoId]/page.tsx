@@ -169,14 +169,14 @@ export default function WatchPage() {
         </div>
 
         {/* Right: Workspace Tools (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col h-[650px] border border-zinc-800/80 rounded-lg overflow-hidden bg-zinc-950">
-          {/* Tabs */}
-          <div className="flex items-center border-b border-zinc-800/80 bg-zinc-900/50">
+        <div className="lg:col-span-5 flex flex-col h-[560px] sm:h-[650px] border border-zinc-800/80 rounded-lg overflow-hidden bg-zinc-950">
+          {/* Mobile-responsive Tabs Bar (Blueprint §8.1 & §9.1) */}
+          <div className="flex items-center border-b border-zinc-800/80 bg-zinc-900/50 overflow-x-auto scrollbar-none shrink-0">
             <button
               onClick={() => setActiveTab('notes')}
-              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'notes'
-                  ? 'border-white text-white'
+                  ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
               }`}
             >
@@ -184,9 +184,9 @@ export default function WatchPage() {
             </button>
             <button
               onClick={() => setActiveTab('code')}
-              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'code'
-                  ? 'border-white text-white'
+                  ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
               }`}
             >
@@ -194,7 +194,7 @@ export default function WatchPage() {
             </button>
             <button
               onClick={() => setActiveTab('quiz')}
-              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'quiz'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -204,9 +204,9 @@ export default function WatchPage() {
             </button>
             <button
               onClick={() => setActiveTab('ai_notes')}
-              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'ai_notes'
-                  ? 'border-white text-white'
+                  ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
               }`}
             >
@@ -214,7 +214,7 @@ export default function WatchPage() {
             </button>
             <button
               onClick={() => setActiveTab('ask_ai')}
-              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'ask_ai'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -224,9 +224,9 @@ export default function WatchPage() {
             </button>
             <button
               onClick={() => setActiveTab('chapters')}
-              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'chapters'
-                  ? 'border-white text-white'
+                  ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
               }`}
             >

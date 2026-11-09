@@ -22,3 +22,7 @@ next-env.d.ts
 
 # PDF files
 *.pdf
+
+# Database backups & snapshots
+backups/
+**/backups/*.json

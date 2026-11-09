@@ -5,6 +5,7 @@ import { connectDB } from './config/db.js';
 import { calculateTopicScore } from './services/rankingService.js';
 import { answerGroundedQuestion, generateStructuredNotesForVideo, generateConceptQuizForVideo, queueVideoIngestion, onIngestionComplete, jobsQueue } from './services/aiService.js';
 import { getUserUsage, recordAiQuery, recordAiNote, recordSandboxRun, setUserTier, getSystemUnitEconomics } from './services/budgetService.js';
+import { createSnapshot, listSnapshots, restoreSnapshot } from './services/backupService.js';
 
 dotenv.config();
 
@@ -904,6 +905,46 @@ app.post('/api/v1/admin/review-queue/:id/resolve', (req: Request, res: Response)
 app.get('/api/v1/admin/jobs', (_req: Request, res: Response) => {
   const jobsList = Array.from(jobsQueue.values());
   res.json({ data: jobsList });
+});
+
+// Blueprint Section 19.3 & 25: Disaster Recovery & Automated Database Backups
+app.post('/api/v1/admin/backups', (_req: Request, res: Response) => {
+  const metadata = createSnapshot({
+    topics,
+    videos,
+    playlists,
+    notes,
+    users,
+    reports: userReports
+  });
+  res.status(201).json({ success: true, data: metadata });
+});
+
+app.get('/api/v1/admin/backups', (_req: Request, res: Response) => {
+  const list = listSnapshots();
+  res.json({ data: list });
+});
+
+app.post('/api/v1/admin/backups/:fileName/restore', (req: Request, res: Response) => {
+  const fileName = Array.isArray(req.params.fileName) ? req.params.fileName[0] : req.params.fileName;
+  const result = restoreSnapshot(fileName);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  // Restore collections
+  if (result.restoredData.topics) topics = result.restoredData.topics;
+  if (result.restoredData.videos) videos = result.restoredData.videos;
+  if (result.restoredData.playlists) playlists = result.restoredData.playlists;
+  if (result.restoredData.notes) notes = result.restoredData.notes;
+  if (result.restoredData.users) users = result.restoredData.users;
+  if (result.restoredData.reports) userReports = result.restoredData.reports;
+
+  res.json({
+    success: true,
+    message: `Database successfully restored from snapshot ${req.params.fileName}`,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // AI & Video Ingestion (Blueprint Section 4.2, 8.6, 13.2, 20.1)
