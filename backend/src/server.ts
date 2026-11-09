@@ -6,6 +6,7 @@ import { calculateTopicScore } from './services/rankingService.js';
 import { answerGroundedQuestion, generateStructuredNotesForVideo, generateConceptQuizForVideo, queueVideoIngestion, onIngestionComplete, jobsQueue } from './services/aiService.js';
 import { getUserUsage, recordAiQuery, recordAiNote, recordSandboxRun, setUserTier, getSystemUnitEconomics } from './services/budgetService.js';
 import { createSnapshot, listSnapshots, restoreSnapshot } from './services/backupService.js';
+import { taxonomyRegistry, UNIVERSAL_SUBJECTS, UNIVERSAL_TOPICS } from './services/taxonomyService.js';
 
 dotenv.config();
 
@@ -47,49 +48,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// In-memory data seed for instantaneous execution without requiring external DB
-let topics = [
-  {
-    id: 'react_hooks',
-    subjectId: 'cs_it',
-    slug: 'react-hooks',
-    name: 'React Hooks',
-    description: 'State management, side-effects, memoization and reusable custom hooks in modern React',
-    aliases: ['React', 'Hooks', 'useEffect', 'useState'],
-    status: 'active',
-    conceptChecklist: ['useState', 'useEffect', 'dependency array', 'cleanup function', 'useMemo', 'useCallback', 'custom hooks']
-  },
-  {
-    id: 'binary_search_trees',
-    subjectId: 'cs_it',
-    slug: 'binary-search-trees',
-    name: 'Binary Search Trees (BST)',
-    description: 'Tree data structures, BST invariant properties, search, insertion, deletion and tree traversals',
-    aliases: ['BST', 'Binary Tree', 'Trees', 'DSA Trees'],
-    status: 'active',
-    conceptChecklist: ['BST property', 'search operation', 'node insertion', 'node deletion', 'in-order traversal', 'time complexity']
-  },
-  {
-    id: 'system_design',
-    subjectId: 'cs_it',
-    slug: 'system-design',
-    name: 'System Design Fundamentals',
-    description: 'Architecting distributed systems, caching, database sharding, load balancing and CAP theorem',
-    aliases: ['System Architecture', 'Distributed Systems', 'Scalability'],
-    status: 'active',
-    conceptChecklist: ['horizontal vs vertical scaling', 'load balancers', 'caching strategies', 'database indexing', 'CAP theorem']
-  },
-  {
-    id: 'async_javascript',
-    subjectId: 'cs_it',
-    slug: 'async-javascript',
-    name: 'Async JavaScript & Event Loop',
-    description: 'Deep dive into asynchronous programming, Promises, async/await, call stack and event loop microtasks',
-    aliases: ['JavaScript Async', 'Event Loop', 'Promises', 'Microtasks', 'JS Concurrency'],
-    status: 'active',
-    conceptChecklist: ['call stack and web APIs', 'task queue vs microtask queue', 'Promises', 'async/await', 'event loop concurrency']
-  }
-];
+// Universal Educational Taxonomy Topics & Subjects Seed
+let topics: any[] = taxonomyRegistry.getAllTopics();
 
 let videos = [
   {
@@ -274,6 +234,194 @@ let videos = [
     ratingCount: 112,
     creatorTrust: 0.99,
     reasonCodes: ['Gold-standard visual explanation', 'Highest learner consensus']
+  },
+  {
+    id: 'vid_physics_electrostatics_cbse',
+    provider: 'youtube',
+    providerVideoId: 'TFlV46zY1_w',
+    canonicalUrl: 'https://www.youtube.com/watch?v=TFlV46zY1_w',
+    title: 'Class 12 Physics: Electrostatics & Coulomb\'s Law in One Shot',
+    description: 'Comprehensive Class 12 Physics lecture on electric charges, Coulomb law vector form, superposition principle, electric field lines, and flux.',
+    thumbnailUrl: 'https://i.ytimg.com/vi/TFlV46zY1_w/hqdefault.jpg',
+    durationSeconds: 2400,
+    publishedAt: '2023-06-12T10:00:00Z',
+    channelTitle: 'Physics Wallah',
+    primaryTopicId: 'physics_electrostatics',
+    secondaryTopicIds: ['physics_electromagnetism'],
+    topicCoverage: [
+      { conceptId: 'Coulombs law of charges', conceptName: 'Coulomb Law and Vector Form', level: 'demonstrated', confidence: 0.98 },
+      { conceptId: 'Electric field and superposition', conceptName: 'Electric Field & Superposition', level: 'demonstrated', confidence: 0.96 },
+      { conceptId: 'Electric flux and Gauss theorem', conceptName: 'Gauss Law Applications', level: 'demonstrated', confidence: 0.95 }
+    ],
+    chapters: [
+      { title: 'Properties of Electric Charges', start: 0, end: 420 },
+      { title: 'Coulomb Law in Vector Form', start: 420, end: 1100 },
+      { title: 'Electric Field & Superposition Principle', start: 1100, end: 1800 },
+      { title: 'Electric Dipole & Flux Intro', start: 1800, end: 2400 }
+    ],
+    aiAssessment: {
+      evaluationVersion: 'v1.4-gpt4o',
+      clarity: 96,
+      accuracyEvidence: 97,
+      exampleQuality: 98,
+      completeness: 95,
+      limitations: [],
+      needsHumanReview: false
+    },
+    ratingAverage: 4.92,
+    ratingCount: 78,
+    creatorTrust: 0.97,
+    reasonCodes: ['Class 12 Curriculum Aligned', 'Top rated conceptual clarity']
+  },
+  {
+    id: 'vid_chem_organic_reactions_mastery',
+    provider: 'youtube',
+    providerVideoId: 'V_Xf6pM8rA0',
+    canonicalUrl: 'https://www.youtube.com/watch?v=V_Xf6pM8rA0',
+    title: 'Complete Organic Chemistry Reaction Mechanisms: SN1, SN2, E1, E2',
+    description: 'Master nucleophilic substitution and elimination reactions. Detailed electron arrow pushing, stereochemistry inversion, carbocation rearrangement, and Zaitsev rule.',
+    thumbnailUrl: 'https://i.ytimg.com/vi/V_Xf6pM8rA0/hqdefault.jpg',
+    durationSeconds: 1980,
+    publishedAt: '2023-05-18T14:00:00Z',
+    channelTitle: 'The Organic Chemistry Tutor',
+    primaryTopicId: 'chem_organic_reactions',
+    secondaryTopicIds: [],
+    topicCoverage: [
+      { conceptId: 'SN1 vs SN2 stereochemical outcomes', conceptName: 'SN1 vs SN2 Mechanisms', level: 'demonstrated', confidence: 0.99 },
+      { conceptId: 'E1 and E2 elimination pathways (Zaitsev rule)', conceptName: 'Elimination Pathways', level: 'demonstrated', confidence: 0.97 },
+      { conceptId: 'Carbocation stability and hyperconjugation', conceptName: 'Carbocation Rearrangements', level: 'demonstrated', confidence: 0.96 }
+    ],
+    chapters: [
+      { title: 'SN2 Mechanism & Walden Inversion', start: 0, end: 540 },
+      { title: 'SN1 Mechanism & Carbocations', start: 540, end: 1080 },
+      { title: 'E2 vs E1 Elimination & Zaitsev Rule', start: 1080, end: 1560 },
+      { title: 'Comprehensive Decision Chart', start: 1560, end: 1980 }
+    ],
+    aiAssessment: {
+      evaluationVersion: 'v1.4-gpt4o',
+      clarity: 98,
+      accuracyEvidence: 99,
+      exampleQuality: 99,
+      completeness: 97,
+      limitations: [],
+      needsHumanReview: false
+    },
+    ratingAverage: 4.96,
+    ratingCount: 124,
+    creatorTrust: 0.99,
+    reasonCodes: ['Gold-standard reaction mechanisms', 'High pedagogical consensus']
+  },
+  {
+    id: 'vid_math_calculus_essence',
+    provider: 'youtube',
+    providerVideoId: 'WUvTyaaNkzM',
+    canonicalUrl: 'https://www.youtube.com/watch?v=WUvTyaaNkzM',
+    title: 'Essence of Calculus: The Fundamental Theorem',
+    description: 'Grant Sanderson geometric visualization of calculus, integrals as accumulation, derivatives as rates of change, and the beautiful duality between them.',
+    thumbnailUrl: 'https://i.ytimg.com/vi/WUvTyaaNkzM/hqdefault.jpg',
+    durationSeconds: 1020,
+    publishedAt: '2022-04-10T12:00:00Z',
+    channelTitle: '3Blue1Brown',
+    primaryTopicId: 'math_calculus',
+    secondaryTopicIds: [],
+    topicCoverage: [
+      { conceptId: 'Fundamental theorem of calculus', conceptName: 'Fundamental Theorem of Calculus', level: 'demonstrated', confidence: 0.99 },
+      { conceptId: 'Derivatives and tangent slopes', conceptName: 'Geometric Rate of Change', level: 'demonstrated', confidence: 0.98 },
+      { conceptId: 'Integration by parts and substitution', conceptName: 'Accumulation Functions', level: 'demonstrated', confidence: 0.96 }
+    ],
+    chapters: [
+      { title: 'The core paradox of calculus', start: 0, end: 210 },
+      { title: 'Area under curves as accumulation', start: 210, end: 560 },
+      { title: 'Why derivative is the inverse of integral', start: 560, end: 1020 }
+    ],
+    aiAssessment: {
+      evaluationVersion: 'v1.4-gpt4o',
+      clarity: 99,
+      accuracyEvidence: 99,
+      exampleQuality: 99,
+      completeness: 98,
+      limitations: [],
+      needsHumanReview: false
+    },
+    ratingAverage: 4.98,
+    ratingCount: 180,
+    creatorTrust: 0.99,
+    reasonCodes: ['World-class visual intuition', 'Essential foundational mathematics']
+  },
+  {
+    id: 'vid_med_cardio_anatomy',
+    provider: 'youtube',
+    providerVideoId: 'q0s-1MC1hcE',
+    canonicalUrl: 'https://www.youtube.com/watch?v=q0s-1MC1hcE',
+    title: 'Cardiovascular System: Anatomy, Heart Chambers & Blood Flow',
+    description: 'Medical lecture on internal heart anatomy, atria, ventricles, atrioventricular valves, semilunar valves, systemic vs pulmonary circuits, and coronary circulation.',
+    thumbnailUrl: 'https://i.ytimg.com/vi/q0s-1MC1hcE/hqdefault.jpg',
+    durationSeconds: 1320,
+    publishedAt: '2023-01-20T08:00:00Z',
+    channelTitle: 'Ninja Nerd',
+    primaryTopicId: 'med_cardiovascular_physiology',
+    secondaryTopicIds: ['med_human_anatomy'],
+    topicCoverage: [
+      { conceptId: 'Chambers, valves and coronary vasculature of heart', conceptName: 'Heart Chambers & Valves', level: 'demonstrated', confidence: 0.99 },
+      { conceptId: 'SA/AV node action potentials and ECG waves', conceptName: 'Conduction System', level: 'demonstrated', confidence: 0.96 }
+    ],
+    chapters: [
+      { title: 'Heart Orientation & Pericardium', start: 0, end: 240 },
+      { title: 'Right vs Left Heart Chambers', start: 240, end: 720 },
+      { title: 'Valvular Mechanics (Tricuspid, Bicuspid, Aortic)', start: 720, end: 1020 },
+      { title: 'Pulmonary & Systemic Circulation Pathway', start: 1020, end: 1320 }
+    ],
+    aiAssessment: {
+      evaluationVersion: 'v1.4-gpt4o',
+      clarity: 98,
+      accuracyEvidence: 99,
+      exampleQuality: 98,
+      completeness: 96,
+      limitations: [],
+      needsHumanReview: false
+    },
+    ratingAverage: 4.95,
+    ratingCount: 110,
+    creatorTrust: 0.98,
+    reasonCodes: ['High-yield medical school lecture', 'Clinical anatomical precision']
+  },
+  {
+    id: 'vid_hist_french_revolution_crash',
+    provider: 'youtube',
+    providerVideoId: 'lTTvKwCylFY',
+    canonicalUrl: 'https://www.youtube.com/watch?v=lTTvKwCylFY',
+    title: 'The French Revolution: Crash Course World History #29',
+    description: 'John Green explores the French Revolution, the Three Estates, the Declaration of the Rights of Man, the Reign of Terror, and its lasting global legacy.',
+    thumbnailUrl: 'https://i.ytimg.com/vi/lTTvKwCylFY/hqdefault.jpg',
+    durationSeconds: 710,
+    publishedAt: '2022-02-14T16:00:00Z',
+    channelTitle: 'CrashCourse',
+    primaryTopicId: 'hist_french_revolution',
+    secondaryTopicIds: [],
+    topicCoverage: [
+      { conceptId: 'Three Estates social and fiscal crisis', conceptName: 'The Three Estates System', level: 'demonstrated', confidence: 0.98 },
+      { conceptId: 'Storming of the Bastille and Great Fear of 1789', conceptName: 'Bastille and 1789 Revolts', level: 'demonstrated', confidence: 0.97 },
+      { conceptId: 'Declaration of the Rights of Man and Citizen', conceptName: 'Declaration of Rights', level: 'demonstrated', confidence: 0.96 }
+    ],
+    chapters: [
+      { title: 'Introduction & Causes of the Revolution', start: 0, end: 160 },
+      { title: 'The Estates-General & Tennis Court Oath', start: 160, end: 340 },
+      { title: 'The Declaration of the Rights of Man', start: 340, end: 510 },
+      { title: 'The Reign of Terror & Historical Verdict', start: 510, end: 710 }
+    ],
+    aiAssessment: {
+      evaluationVersion: 'v1.4-gpt4o',
+      clarity: 97,
+      accuracyEvidence: 96,
+      exampleQuality: 95,
+      completeness: 92,
+      limitations: [],
+      needsHumanReview: false
+    },
+    ratingAverage: 4.89,
+    ratingCount: 92,
+    creatorTrust: 0.96,
+    reasonCodes: ['Engaging historical narrative', 'High secondary curriculum relevance']
   }
 ];
 
@@ -620,10 +768,28 @@ app.post('/api/v1/admin/reports/:id/resolve', (req: Request, res: Response) => {
   res.json({ success: true, data: report });
 });
 
-// Focused Feed (Blueprint Section 5.4 & 12)
-app.get('/api/v1/feed', (_req: Request, res: Response) => {
-  const feed = videos.map(v => {
-    const topic = topics.find(t => t.id === v.primaryTopicId);
+// Focused Feed (Blueprint Section 5.4 & 12 - Personalized by Topics/Subjects)
+app.get('/api/v1/feed', (req: Request, res: Response) => {
+  const { topics: queryTopics, subjects: querySubjects } = req.query;
+  let targetVideos = videos;
+
+  if (queryTopics && typeof queryTopics === 'string') {
+    const topicList = queryTopics.split(',').map(s => s.trim()).filter(Boolean);
+    if (topicList.length > 0) {
+      const matched = videos.filter(v => topicList.includes(v.primaryTopicId) || (v.secondaryTopicIds && v.secondaryTopicIds.some(st => topicList.includes(st))));
+      if (matched.length > 0) targetVideos = matched;
+    }
+  } else if (querySubjects && typeof querySubjects === 'string') {
+    const subjectList = querySubjects.split(',').map(s => s.trim()).filter(Boolean);
+    if (subjectList.length > 0) {
+      const validTopicIds = topics.filter(t => subjectList.includes(t.subjectId)).map(t => t.id);
+      const matched = videos.filter(v => validTopicIds.includes(v.primaryTopicId));
+      if (matched.length > 0) targetVideos = matched;
+    }
+  }
+
+  const feed = targetVideos.map(v => {
+    const topic = topics.find(t => t.id === v.primaryTopicId) || { id: v.primaryTopicId, name: 'General', conceptChecklist: [] };
     const ranking = calculateTopicScore(v, topic);
     return {
       video: v,
@@ -636,13 +802,88 @@ app.get('/api/v1/feed', (_req: Request, res: Response) => {
   res.json({ data: feed, meta: { total: feed.length } });
 });
 
-// Topics
-app.get('/api/v1/topics', (_req: Request, res: Response) => {
-  res.json({ data: topics });
+// Universal Educational Taxonomy: Subjects
+app.get('/api/v1/subjects', (req: Request, res: Response) => {
+  const { category } = req.query;
+  let allSubjects = taxonomyRegistry.getAllSubjects();
+  if (category && typeof category === 'string') {
+    allSubjects = allSubjects.filter(s => s.category === category);
+  }
+  res.json({ data: allSubjects, meta: { total: allSubjects.length } });
+});
+
+app.post('/api/v1/subjects', (req: Request, res: Response) => {
+  const { id, name, description, category, icon, parentSubjectId, streams } = req.body;
+  if (!name || !category) {
+    return res.status(400).json({ error: 'Subject name and category are required' });
+  }
+  const slug = req.body.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const subjectId = id || `subj_${slug}`;
+  const newSubject = taxonomyRegistry.registerSubject({
+    id: subjectId,
+    slug,
+    name,
+    description: description || '',
+    category,
+    icon: icon || 'BookOpen',
+    parentSubjectId: parentSubjectId || null,
+    streams: streams || ['General'],
+    status: 'active',
+    order: taxonomyRegistry.getAllSubjects().length + 1
+  });
+  res.status(201).json({ data: newSubject });
+});
+
+// Universal Educational Taxonomy: Topics (Enhanced with filters & dynamic registration)
+app.get('/api/v1/topics', (req: Request, res: Response) => {
+  const { subjectId, educationLevel, stream, q } = req.query;
+  if (subjectId || educationLevel || stream || q) {
+    const filtered = taxonomyRegistry.filterTopics({
+      subjectId: typeof subjectId === 'string' ? subjectId : undefined,
+      educationLevel: typeof educationLevel === 'string' ? educationLevel : undefined,
+      stream: typeof stream === 'string' ? stream : undefined,
+      searchQuery: typeof q === 'string' ? q : undefined,
+    });
+    return res.json({ data: filtered, meta: { total: filtered.length } });
+  }
+  res.json({ data: topics, meta: { total: topics.length } });
+});
+
+app.post('/api/v1/topics', (req: Request, res: Response) => {
+  const { name, subjectId, description, aliases, conceptChecklist, educationLevel, stream, domain, subtopics } = req.body;
+  if (!name || !subjectId) {
+    return res.status(400).json({ error: 'Topic name and subjectId are required' });
+  }
+  const slug = req.body.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const topicId = req.body.id || `topic_${slug}_${Math.random().toString(36).substring(2, 6)}`;
+  const newTopic = taxonomyRegistry.registerTopic({
+    id: topicId,
+    subjectId,
+    parentId: req.body.parentId || null,
+    slug,
+    name,
+    description: description || '',
+    aliases: Array.isArray(aliases) ? aliases : [name],
+    status: 'active',
+    conceptChecklist: Array.isArray(conceptChecklist) ? conceptChecklist : [],
+    educationLevel: educationLevel || undefined,
+    stream: stream || undefined,
+    domain: domain || undefined,
+    subtopics: Array.isArray(subtopics) ? subtopics : []
+  });
+  // Keep local array in sync
+  const existingIdx = topics.findIndex(t => t.id === newTopic.id);
+  if (existingIdx >= 0) {
+    topics[existingIdx] = newTopic;
+  } else {
+    topics.push(newTopic);
+  }
+  res.status(201).json({ data: newTopic });
 });
 
 app.get('/api/v1/topics/:slug', (req: Request, res: Response) => {
-  const topic = topics.find(t => t.slug === req.params.slug || t.id === req.params.slug);
+  const paramSlug = (Array.isArray(req.params.slug) ? req.params.slug[0] : req.params.slug) as string;
+  const topic = taxonomyRegistry.findTopicByIdOrSlug(paramSlug) || topics.find(t => t.slug === paramSlug || t.id === paramSlug);
   if (!topic) return res.status(404).json({ error: 'Topic not found' });
   const topicVideos = videos.filter(v => v.primaryTopicId === topic.id);
   res.json({ data: { topic, videos: topicVideos } });
@@ -845,10 +1086,10 @@ app.post('/api/v1/topics/:id/ai-playlists', (req: Request, res: Response) => {
 
   // Algorithm: Order foundational concepts before dependent concepts
   const orderedVideos = [...candidateVideos].sort((a, b) => {
-    const aFirstConceptIdx = checklist.findIndex(c => 
+    const aFirstConceptIdx = checklist.findIndex((c: string) => 
       a.topicCoverage?.some((tc: any) => tc.conceptId.toLowerCase().includes(c.toLowerCase()))
     );
-    const bFirstConceptIdx = checklist.findIndex(c => 
+    const bFirstConceptIdx = checklist.findIndex((c: string) => 
       b.topicCoverage?.some((tc: any) => tc.conceptId.toLowerCase().includes(c.toLowerCase()))
     );
     return (aFirstConceptIdx === -1 ? 99 : aFirstConceptIdx) - (bFirstConceptIdx === -1 ? 99 : bFirstConceptIdx);
@@ -859,7 +1100,7 @@ app.post('/api/v1/topics/:id/ai-playlists', (req: Request, res: Response) => {
     v.topicCoverage?.forEach((tc: any) => covered.add(tc.conceptName || tc.conceptId));
   });
 
-  const missing = checklist.filter(c => !Array.from(covered).some(cv => cv.toLowerCase().includes(c.toLowerCase())));
+  const missing = checklist.filter((c: string) => !Array.from(covered).some(cv => cv.toLowerCase().includes(c.toLowerCase())));
 
   const generatedPlaylist = {
     id: `pl_ai_${topic.id}_${Date.now()}`,

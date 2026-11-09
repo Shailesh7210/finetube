@@ -1,8 +1,14 @@
 export interface Subject {
   id: string;
+  slug?: string;
   name: string;
   description: string;
+  category?: string;
   icon?: string;
+  parentSubjectId?: string | null;
+  streams?: string[];
+  status?: 'active' | 'provisional' | 'archived';
+  order?: number;
 }
 
 export interface Topic {
@@ -15,6 +21,10 @@ export interface Topic {
   aliases: string[];
   status: 'active' | 'provisional' | 'archived';
   conceptChecklist: string[];
+  educationLevel?: string;
+  stream?: string;
+  subtopics?: string[];
+  domain?: string;
   videoCount?: number;
 }
 
@@ -194,8 +204,13 @@ export interface UserProfile {
   role: 'learner' | 'creator' | 'admin';
   bio?: string;
   learningGoal?: string;
+  educationLevel?: string;
+  stream?: string;
+  followedSubjectIds?: string[];
   followedTopicIds: string[];
   mutedTopicIds: string[];
+  customInterests?: string[];
+  workspaceMode?: 'auto' | 'notes' | 'math' | 'code';
   preferredLanguage?: 'javascript' | 'typescript' | 'python';
   dailyGoalMinutes?: number;
   strictFocusMode?: boolean;
