@@ -1,5 +1,5 @@
 import { store } from './store';
-import { Video, Topic, Playlist, Note } from './types';
+import { Video, Topic, Playlist, Note, Subject } from './types';
 import { calculateBayesianRating } from './ranking';
 
 function getApiBase(): string {
@@ -39,8 +39,14 @@ async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T 
 
 export const api = {
   // Feed
-  async getFeed(): Promise<any[]> {
-    const remote = await safeFetch<any[]>('/feed');
+  async getFeed(params?: { topics?: string[]; subjects?: string[] }): Promise<any[]> {
+    let queryStr = '';
+    if (params?.topics && params.topics.length > 0) {
+      queryStr = `?topics=${encodeURIComponent(params.topics.join(','))}`;
+    } else if (params?.subjects && params.subjects.length > 0) {
+      queryStr = `?subjects=${encodeURIComponent(params.subjects.join(','))}`;
+    }
+    const remote = await safeFetch<any[]>(`/feed${queryStr}`);
     if (remote && Array.isArray(remote)) return remote;
     return store.getFocusedFeed().map(item => ({
       video: item.video,
@@ -50,11 +56,76 @@ export const api = {
     }));
   },
 
-  // Topics
-  async getTopics(): Promise<Topic[]> {
-    const remote = await safeFetch<Topic[]>('/topics');
+  // Subjects
+  async getSubjects(category?: string): Promise<Subject[]> {
+    const query = category ? `?category=${encodeURIComponent(category)}` : '';
+    const remote = await safeFetch<Subject[]>(`/subjects${query}`);
     if (remote && Array.isArray(remote)) return remote;
-    return store.getTopics();
+    return store.getSubjects(category);
+  },
+
+  async registerSubject(subject: Partial<Subject>): Promise<Subject | null> {
+    const remote = await safeFetch<Subject>('/subjects', {
+      method: 'POST',
+      body: JSON.stringify(subject)
+    });
+    if (remote) {
+      store.registerSubject(remote);
+      return remote;
+    }
+    if (subject.id && subject.name) {
+      const fallback: Subject = {
+        id: subject.id,
+        name: subject.name,
+        description: subject.description || '',
+        category: subject.category || 'general',
+        icon: subject.icon || 'BookOpen',
+        status: 'active'
+      };
+      store.registerSubject(fallback);
+      return fallback;
+    }
+    return null;
+  },
+
+  // Topics
+  async getTopics(filters?: { subjectId?: string; educationLevel?: string; stream?: string; q?: string }): Promise<Topic[]> {
+    let queryParams: string[] = [];
+    if (filters?.subjectId) queryParams.push(`subjectId=${encodeURIComponent(filters.subjectId)}`);
+    if (filters?.educationLevel) queryParams.push(`educationLevel=${encodeURIComponent(filters.educationLevel)}`);
+    if (filters?.stream) queryParams.push(`stream=${encodeURIComponent(filters.stream)}`);
+    if (filters?.q) queryParams.push(`q=${encodeURIComponent(filters.q)}`);
+
+    const queryStr = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+    const remote = await safeFetch<Topic[]>(`/topics${queryStr}`);
+    if (remote && Array.isArray(remote)) return remote;
+    return store.getTopics(filters);
+  },
+
+  async registerTopic(topic: Partial<Topic>): Promise<Topic | null> {
+    const remote = await safeFetch<Topic>('/topics', {
+      method: 'POST',
+      body: JSON.stringify(topic)
+    });
+    if (remote) {
+      store.registerTopic(remote);
+      return remote;
+    }
+    if (topic.id && topic.name && topic.subjectId) {
+      const fallback: Topic = {
+        id: topic.id,
+        subjectId: topic.subjectId,
+        slug: topic.slug || topic.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        name: topic.name,
+        description: topic.description || '',
+        aliases: topic.aliases || [topic.name],
+        status: 'active',
+        conceptChecklist: topic.conceptChecklist || []
+      };
+      store.registerTopic(fallback);
+      return fallback;
+    }
+    return null;
   },
 
   async getTopicBySlug(slug: string): Promise<{ topic: Topic; videos: Video[] } | null> {

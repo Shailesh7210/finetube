@@ -75,10 +75,12 @@ class StoreState {
       displayName: name.trim() || email.split('@')[0],
       role: 'learner',
       bio: '',
-      learningGoal: goal || 'Deep conceptual mastery',
-      followedTopicIds: ['react_hooks'],
+      learningGoal: goal || 'Universal conceptual mastery',
+      followedSubjectIds: [],
+      followedTopicIds: [],
       mutedTopicIds: [],
-      preferredLanguage: 'javascript',
+      customInterests: [],
+      workspaceMode: 'auto',
       dailyGoalMinutes: 30,
       strictFocusMode: true
     };
@@ -111,9 +113,43 @@ class StoreState {
     return updated;
   }
 
+  // Subjects
+  getSubjects(category?: string): Subject[] {
+    if (!category) return this.subjects;
+    return this.subjects.filter(s => s.category === category);
+  }
+
+  getSubjectById(id: string): Subject | undefined {
+    return this.subjects.find(s => s.id === id || s.slug === id);
+  }
+
+  registerSubject(subject: Subject): void {
+    const existing = this.subjects.findIndex(s => s.id === subject.id);
+    if (existing >= 0) {
+      this.subjects[existing] = subject;
+    } else {
+      this.subjects.push(subject);
+    }
+  }
+
   // Topics
-  getTopics(): Topic[] {
-    return this.topics;
+  getTopics(filter?: { subjectId?: string; educationLevel?: string; stream?: string }): Topic[] {
+    if (!filter) return this.topics;
+    return this.topics.filter(t => {
+      if (filter.subjectId && t.subjectId !== filter.subjectId) return false;
+      if (filter.educationLevel && (!t.educationLevel || !t.educationLevel.toLowerCase().includes(filter.educationLevel.toLowerCase()))) return false;
+      if (filter.stream && (!t.stream || !t.stream.toLowerCase().includes(filter.stream.toLowerCase()))) return false;
+      return true;
+    });
+  }
+
+  registerTopic(topic: Topic): void {
+    const existing = this.topics.findIndex(t => t.id === topic.id);
+    if (existing >= 0) {
+      this.topics[existing] = topic;
+    } else {
+      this.topics.push(topic);
+    }
   }
 
   getTopicBySlug(slug: string): Topic | undefined {
