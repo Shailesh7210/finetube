@@ -77,6 +77,16 @@ let topics = [
     aliases: ['System Architecture', 'Distributed Systems', 'Scalability'],
     status: 'active',
     conceptChecklist: ['horizontal vs vertical scaling', 'load balancers', 'caching strategies', 'database indexing', 'CAP theorem']
+  },
+  {
+    id: 'async_javascript',
+    subjectId: 'cs_it',
+    slug: 'async-javascript',
+    name: 'Async JavaScript & Event Loop',
+    description: 'Deep dive into asynchronous programming, Promises, async/await, call stack and event loop microtasks',
+    aliases: ['JavaScript Async', 'Event Loop', 'Promises', 'Microtasks', 'JS Concurrency'],
+    status: 'active',
+    conceptChecklist: ['call stack and web APIs', 'task queue vs microtask queue', 'Promises', 'async/await', 'event loop concurrency']
   }
 ];
 
@@ -120,6 +130,42 @@ let videos = [
     reasonCodes: ['Top community-rated explanation', 'Strong practical code examples']
   },
   {
+    id: 'vid_react_usememo_usecallback',
+    provider: 'youtube',
+    providerVideoId: '_AyFP5s69N4',
+    canonicalUrl: 'https://www.youtube.com/watch?v=_AyFP5s69N4',
+    title: 'How to useMemo and useCallback in React - Explained',
+    description: 'Learn when and how to use useMemo and useCallback hooks in React for referential equality and performance optimization.',
+    thumbnailUrl: 'https://i.ytimg.com/vi/_AyFP5s69N4/hqdefault.jpg',
+    durationSeconds: 880,
+    publishedAt: '2023-03-22T14:00:00Z',
+    channelTitle: 'Web Dev Simplified',
+    primaryTopicId: 'react_hooks',
+    secondaryTopicIds: [],
+    topicCoverage: [
+      { conceptId: 'useMemo', conceptName: 'useMemo caching', level: 'demonstrated', confidence: 0.97 },
+      { conceptId: 'useCallback', conceptName: 'useCallback referential identity', level: 'demonstrated', confidence: 0.96 }
+    ],
+    chapters: [
+      { title: 'Why memoization matters', start: 0, end: 210 },
+      { title: 'useMemo for expensive calculations', start: 210, end: 520 },
+      { title: 'useCallback for reference equality', start: 520, end: 880 }
+    ],
+    aiAssessment: {
+      evaluationVersion: 'v1.4-gpt4o',
+      clarity: 95,
+      accuracyEvidence: 96,
+      exampleQuality: 96,
+      completeness: 92,
+      limitations: [],
+      needsHumanReview: false
+    },
+    ratingAverage: 4.91,
+    ratingCount: 38,
+    creatorTrust: 0.95,
+    reasonCodes: ['Strong practical code examples', 'Clear performance trade-offs']
+  },
+  {
     id: 'vid_bst_explained',
     provider: 'youtube',
     providerVideoId: 'f5dU3xoE6ms',
@@ -155,6 +201,78 @@ let videos = [
     ratingCount: 56,
     creatorTrust: 0.98,
     reasonCodes: ['Exceptional pedagogical clarity', 'Top community-rated explanation']
+  },
+  {
+    id: 'vid_system_design_caching',
+    provider: 'youtube',
+    providerVideoId: 'U3RkDLtS7uY',
+    canonicalUrl: 'https://www.youtube.com/watch?v=U3RkDLtS7uY',
+    title: 'System Design: Caching Strategies & Redis Architecture',
+    description: 'How distributed caching works at scale. Learn about Redis, Memcached, cache eviction policies (LRU/LFU), and cache-aside vs write-through patterns.',
+    thumbnailUrl: 'https://i.ytimg.com/vi/U3RkDLtS7uY/hqdefault.jpg',
+    durationSeconds: 1120,
+    publishedAt: '2023-04-10T09:00:00Z',
+    channelTitle: 'ByteByteGo',
+    primaryTopicId: 'system_design',
+    secondaryTopicIds: [],
+    topicCoverage: [
+      { conceptId: 'caching strategies', conceptName: 'Distributed Caching', level: 'demonstrated', confidence: 0.98 },
+      { conceptId: 'horizontal vs vertical scaling', conceptName: 'Horizontal Scaling', level: 'demonstrated', confidence: 0.94 }
+    ],
+    chapters: [
+      { title: 'Caching Overview & In-memory Stores', start: 0, end: 240 },
+      { title: 'Cache Eviction Policies (LRU/LFU)', start: 240, end: 620 },
+      { title: 'Cache-aside vs Write-through Patterns', start: 620, end: 1120 }
+    ],
+    aiAssessment: {
+      evaluationVersion: 'v1.4-gpt4o',
+      clarity: 98,
+      accuracyEvidence: 97,
+      exampleQuality: 99,
+      completeness: 94,
+      limitations: [],
+      needsHumanReview: false
+    },
+    ratingAverage: 4.95,
+    ratingCount: 64,
+    creatorTrust: 0.99,
+    reasonCodes: ['Top community-rated explanation', 'High production architecture relevance']
+  },
+  {
+    id: 'vid_async_event_loop',
+    provider: 'youtube',
+    providerVideoId: '8aGhZQkoFbQ',
+    canonicalUrl: 'https://www.youtube.com/watch?v=8aGhZQkoFbQ',
+    title: 'What the heck is the event loop anyway?',
+    description: 'Philip Roberts legendary JSConf talk explaining the JavaScript runtime, call stack, event loop, callback queue, and async execution.',
+    thumbnailUrl: 'https://i.ytimg.com/vi/8aGhZQkoFbQ/hqdefault.jpg',
+    durationSeconds: 1580,
+    publishedAt: '2021-08-14T11:00:00Z',
+    channelTitle: 'JSConf',
+    primaryTopicId: 'async_javascript',
+    secondaryTopicIds: [],
+    topicCoverage: [
+      { conceptId: 'call stack and web APIs', conceptName: 'Call Stack & Browser APIs', level: 'demonstrated', confidence: 0.99 },
+      { conceptId: 'task queue vs microtask queue', conceptName: 'Callback Queue', level: 'demonstrated', confidence: 0.98 }
+    ],
+    chapters: [
+      { title: 'JavaScript Single Thread & Call Stack', start: 0, end: 320 },
+      { title: 'Web APIs & Asynchronous Callbacks', start: 320, end: 780 },
+      { title: 'The Event Loop In Action', start: 780, end: 1580 }
+    ],
+    aiAssessment: {
+      evaluationVersion: 'v1.4-gpt4o',
+      clarity: 99,
+      accuracyEvidence: 99,
+      exampleQuality: 99,
+      completeness: 98,
+      limitations: [],
+      needsHumanReview: false
+    },
+    ratingAverage: 4.98,
+    ratingCount: 112,
+    creatorTrust: 0.99,
+    reasonCodes: ['Gold-standard visual explanation', 'Highest learner consensus']
   }
 ];
 
