@@ -7,6 +7,7 @@ import { answerGroundedQuestion, generateStructuredNotesForVideo, generateConcep
 import { getUserUsage, recordAiQuery, recordAiNote, recordSandboxRun, setUserTier, getSystemUnitEconomics } from './services/budgetService.js';
 import { createSnapshot, listSnapshots, restoreSnapshot } from './services/backupService.js';
 import { taxonomyRegistry, UNIVERSAL_SUBJECTS, UNIVERSAL_TOPICS } from './services/taxonomyService.js';
+import { youtubeService } from './services/youtubeService.js';
 
 dotenv.config();
 
@@ -800,6 +801,40 @@ app.get('/api/v1/feed', (req: Request, res: Response) => {
   }).sort((a, b) => b.rankScore - a.rankScore);
 
   res.json({ data: feed, meta: { total: feed.length } });
+});
+
+// Blueprint Section 4 & 11: Dynamic YouTube Video Discovery
+app.get('/api/v1/discover/search', async (req: Request, res: Response) => {
+  const { q, pageToken, pageSize, educationLevel, subjectId } = req.query;
+  if (!q || typeof q !== 'string' || !q.trim()) {
+    return res.status(400).json({ error: 'Search query "q" is required' });
+  }
+
+  try {
+    const size = pageSize ? parseInt(pageSize as string, 10) : 12;
+    const result = await youtubeService.searchEducationalVideos(q, {
+      pageToken: typeof pageToken === 'string' ? pageToken : undefined,
+      pageSize: isNaN(size) ? 12 : size,
+      educationLevel: typeof educationLevel === 'string' ? educationLevel : undefined,
+      subjectId: typeof subjectId === 'string' ? subjectId : undefined
+    });
+
+    // Auto-upsert discovered videos into live video catalog for seamless interactive playback
+    result.data.forEach(discoveredVideo => {
+      const existingIdx = videos.findIndex(v => v.providerVideoId === discoveredVideo.providerVideoId || v.id === discoveredVideo.id);
+      if (existingIdx === -1) {
+        videos.unshift(discoveredVideo as any);
+      }
+    });
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Video discovery failed', details: error.message });
+  }
+});
+
+app.get('/api/v1/discover/quota', (_req: Request, res: Response) => {
+  res.json({ data: youtubeService.getQuotaStats() });
 });
 
 // Universal Educational Taxonomy: Subjects

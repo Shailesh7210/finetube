@@ -137,6 +137,50 @@ export const api = {
     return { topic, videos };
   },
 
+  // Dynamic YouTube Discovery (Blueprint §4 & §11)
+  async searchYouTube(
+    query: string,
+    options?: { pageToken?: string; pageSize?: number; educationLevel?: string; subjectId?: string }
+  ): Promise<{
+    data: Video[];
+    nextPageToken?: string;
+    totalResults: number;
+    source: string;
+    cached: boolean;
+  }> {
+    let queryParams: string[] = [`q=${encodeURIComponent(query)}`];
+    if (options?.pageToken) queryParams.push(`pageToken=${encodeURIComponent(options.pageToken)}`);
+    if (options?.pageSize) queryParams.push(`pageSize=${encodeURIComponent(options.pageSize.toString())}`);
+    if (options?.educationLevel) queryParams.push(`educationLevel=${encodeURIComponent(options.educationLevel)}`);
+    if (options?.subjectId) queryParams.push(`subjectId=${encodeURIComponent(options.subjectId)}`);
+
+    const remote = await safeFetch<any>(`/discover/search?${queryParams.join('&')}`);
+    if (remote && Array.isArray(remote.data)) {
+      remote.data.forEach((v: Video) => store.addDiscoveredVideo(v));
+      return remote;
+    }
+
+    // Local client-side fallback
+    const q = query.toLowerCase().trim();
+    const all = store.getVideos();
+    const matched = all.filter(v => 
+      v.title.toLowerCase().includes(q) || 
+      v.description.toLowerCase().includes(q) ||
+      (v.topicCoverage && v.topicCoverage.some(tc => tc.conceptName.toLowerCase().includes(q)))
+    );
+    return {
+      data: matched,
+      totalResults: matched.length,
+      source: 'local_store',
+      cached: true
+    };
+  },
+
+  async getYouTubeQuota(): Promise<any> {
+    const remote = await safeFetch<any>('/discover/quota');
+    return remote || { dailyEstimatedQuotaLimit: 10000, pointsUsedToday: 0, remainingPoints: 10000 };
+  },
+
   // Videos
   async getVideo(id: string): Promise<Video | null> {
     const remote = await safeFetch<Video>(`/videos/${id}`);
