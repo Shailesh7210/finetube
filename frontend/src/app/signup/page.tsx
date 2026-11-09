@@ -41,7 +41,7 @@ export default function SignupPage() {
         <div className="text-center space-y-1.5">
           <h1 className="text-xl font-bold text-white">Create your FineTube account</h1>
           <p className="text-xs text-zinc-400">
-            Learn with intention. Customize your topics and curriculum.
+            Learn with intention. Discover educational videos tailored to your subjects and goals.
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export default function SignupPage() {
               type="text"
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
-              placeholder="e.g. Master React Hooks & DSA"
+              placeholder="e.g. Class 12 Science, Medical Studies, World History, React..."
               className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
             />
           </div>

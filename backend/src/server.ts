@@ -608,11 +608,16 @@ app.post('/api/v1/auth/signup', (req: Request, res: Response) => {
     role: 'learner',
     bio: '',
     learningGoal: learningGoal || 'Build deep conceptual understanding',
-    followedTopicIds: ['react_hooks'],
-    mutedTopicIds: [],
-    preferredLanguage: 'javascript',
-    dailyGoalMinutes: 30,
-    strictFocusMode: true
+    educationLevel: req.body.educationLevel || undefined,
+    stream: req.body.stream || undefined,
+    followedSubjectIds: Array.isArray(req.body.followedSubjectIds) ? req.body.followedSubjectIds : [],
+    followedTopicIds: Array.isArray(req.body.followedTopicIds) ? req.body.followedTopicIds : [],
+    mutedTopicIds: Array.isArray(req.body.mutedTopicIds) ? req.body.mutedTopicIds : [],
+    customInterests: Array.isArray(req.body.customInterests) ? req.body.customInterests : [],
+    workspaceMode: req.body.workspaceMode || 'auto',
+    preferredLanguage: req.body.preferredLanguage || undefined,
+    dailyGoalMinutes: req.body.dailyGoalMinutes || 30,
+    strictFocusMode: req.body.strictFocusMode ?? true
   };
 
   users.push(newUser);
@@ -650,15 +655,21 @@ app.get('/api/v1/auth/me', (req: Request, res: Response) => {
 });
 
 app.put('/api/v1/auth/profile', (req: Request, res: Response) => {
-  const { id, displayName, bio, learningGoal, followedTopicIds, preferredLanguage, dailyGoalMinutes, strictFocusMode } = req.body;
+  const { id, displayName, bio, learningGoal, educationLevel, stream, followedSubjectIds, followedTopicIds, mutedTopicIds, customInterests, workspaceMode, preferredLanguage, dailyGoalMinutes, strictFocusMode } = req.body;
   const userIndex = users.findIndex(u => u.id === id || u.email === req.body.email);
   const target = userIndex >= 0 ? users[userIndex] : users[0];
 
   if (displayName) target.displayName = displayName;
   if (bio !== undefined) target.bio = bio;
   if (learningGoal !== undefined) target.learningGoal = learningGoal;
+  if (educationLevel !== undefined) target.educationLevel = educationLevel;
+  if (stream !== undefined) target.stream = stream;
+  if (Array.isArray(followedSubjectIds)) target.followedSubjectIds = followedSubjectIds;
   if (Array.isArray(followedTopicIds)) target.followedTopicIds = followedTopicIds;
-  if (preferredLanguage) target.preferredLanguage = preferredLanguage;
+  if (Array.isArray(mutedTopicIds)) target.mutedTopicIds = mutedTopicIds;
+  if (Array.isArray(customInterests)) target.customInterests = customInterests;
+  if (workspaceMode !== undefined) target.workspaceMode = workspaceMode;
+  if (preferredLanguage !== undefined) target.preferredLanguage = preferredLanguage;
   if (dailyGoalMinutes) target.dailyGoalMinutes = dailyGoalMinutes;
   if (strictFocusMode !== undefined) target.strictFocusMode = strictFocusMode;
 

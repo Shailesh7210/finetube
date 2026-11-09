@@ -77,7 +77,7 @@ export function Navbar() {
             <input
               type="text"
               name="q"
-              placeholder="Search concepts..."
+              placeholder="Search any subject or topic..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full bg-zinc-900/90 text-xs border border-zinc-800/90 rounded-lg pl-8 pr-3 py-1.5 text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/20 transition-all"
