@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { store } from '@/lib/store';
 import { Check, ArrowRight, Download, Trash2, Shield } from 'lucide-react';
 import { api } from '@/lib/api';
+import { UsageQuotaCard } from '@/components/profile/UsageQuotaCard';
 
 function ProfileForm() {
   const router = useRouter();
@@ -282,6 +283,9 @@ function ProfileForm() {
           </button>
         </div>
       </form>
+
+      {/* Blueprint Section 20 & 21: Usage Quotas & Tier Controls */}
+      <UsageQuotaCard />
 
       {/* Blueprint Section 15.4: GDPR Data Portability & Erasure Controls */}
       <div className="p-5 rounded-xl bg-zinc-900/30 border border-zinc-800 space-y-4">

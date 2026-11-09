@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import { calculateTopicScore } from './services/rankingService.js';
 import { answerGroundedQuestion, generateStructuredNotesForVideo, generateConceptQuizForVideo, queueVideoIngestion, onIngestionComplete, jobsQueue } from './services/aiService.js';
+import { getUserUsage, recordAiQuery, recordAiNote, recordSandboxRun, setUserTier, getSystemUnitEconomics } from './services/budgetService.js';
 
 dotenv.config();
 
@@ -787,11 +788,19 @@ app.get('/api/v1/admin/jobs', (_req: Request, res: Response) => {
   res.json({ data: jobsList });
 });
 
-// AI & Video Ingestion (Blueprint Section 4.2, 8.6, 13.2)
+// AI & Video Ingestion (Blueprint Section 4.2, 8.6, 13.2, 20.1)
 app.post('/api/v1/ai/ask', (req: Request, res: Response) => {
   const { videoId, question } = req.body;
   if (!videoId || !question) {
     return res.status(400).json({ error: 'videoId and question are required' });
+  }
+
+  // Blueprint §20.1 & §21: Quota Enforcement
+  const allowed = recordAiQuery('user_default', 350);
+  if (!allowed) {
+    return res.status(429).json({
+      error: 'Daily AI Assistant query quota reached for your current tier. Resets at midnight UTC or upgrade to Pro (Blueprint §20.1).'
+    });
   }
 
   const video = videos.find(v => v.id === videoId);
@@ -805,6 +814,15 @@ app.post('/api/v1/ai/ask', (req: Request, res: Response) => {
 
 app.post('/api/v1/ai/generate-notes', (req: Request, res: Response) => {
   const { videoId } = req.body;
+
+  // Blueprint §20.1 & §21: Quota Enforcement
+  const allowed = recordAiNote('user_default', 800);
+  if (!allowed) {
+    return res.status(429).json({
+      error: 'Daily AI note generation quota reached for your current tier. Resets at midnight UTC or upgrade to Pro (Blueprint §20.1).'
+    });
+  }
+
   const video = videos.find(v => v.id === videoId);
   if (!video) {
     return res.status(404).json({ error: 'Video not found' });
@@ -893,6 +911,7 @@ app.get('/api/v1/admin/metrics', (_req: Request, res: Response) => {
       averageCurriculumRating: avgRating,
       totalCommunityRatings: totalRatings,
       totalTelemetryEvents: analyticsEvents.length,
+      unitEconomics: getSystemUnitEconomics(),
       feedHealthStatus: 'HEALTHY',
       observability: {
         apiUptime: '99.98%',
@@ -903,15 +922,29 @@ app.get('/api/v1/admin/metrics', (_req: Request, res: Response) => {
   });
 });
 
+// Blueprint Section 20 & 21: Usage Quotas & Tier Management
+app.get('/api/v1/billing/usage', (_req: Request, res: Response) => {
+  const usageData = getUserUsage('user_default');
+  res.json({ data: usageData });
+});
+
+app.post('/api/v1/billing/upgrade', (req: Request, res: Response) => {
+  const { tier = 'PRO' } = req.body;
+  const updated = setUserTier('user_default', tier);
+  res.json({ success: true, data: updated });
+});
+
 // Developer Sandbox & Code Execution (Blueprint Section 8.3 & 8.4)
 let userExecutionQuota = DAILY_SANDBOX_QUOTA;
 
 app.get('/api/v1/workspaces/quota', (_req: Request, res: Response) => {
+  const usage = getUserUsage('user_default');
   res.json({
     data: {
-      dailyQuota: DAILY_SANDBOX_QUOTA,
-      remaining: userExecutionQuota,
-      usedToday: DAILY_SANDBOX_QUOTA - userExecutionQuota
+      dailyQuota: usage.limits.maxSandboxRunsDaily,
+      remaining: usage.usage.sandboxRuns.remaining,
+      usedToday: usage.usage.sandboxRuns.used,
+      tier: usage.tier
     }
   });
 });
@@ -922,13 +955,13 @@ app.post('/api/v1/code/execute', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Code is required' });
   }
 
-  if (userExecutionQuota <= 0) {
+  const allowed = recordSandboxRun('user_default');
+  if (!allowed) {
     return res.status(429).json({
-      error: 'Daily sandbox execution quota reached (50/50 runs). Resets at midnight UTC.'
+      error: 'Daily sandbox execution quota reached for your current tier. Resets at midnight UTC or upgrade to Pro (Blueprint §20.1).'
     });
   }
 
-  userExecutionQuota -= 1;
   const startTime = Date.now();
   const logs: string[] = [];
 
