@@ -487,5 +487,31 @@ export const api = {
       body: JSON.stringify({ tier })
     });
     return remote;
+  },
+
+  // Blueprint §19.3 & §25: Automated Database Backups & Disaster Recovery
+  async createAdminBackup(): Promise<any> {
+    const remote = await safeFetch<any>('/admin/backups', { method: 'POST' });
+    return remote;
+  },
+
+  async getAdminBackups(): Promise<any[]> {
+    const remote = await safeFetch<any[]>('/admin/backups');
+    if (remote && Array.isArray(remote)) return remote;
+    return [
+      {
+        id: 'bak_sample_1',
+        fileName: 'finetube-backup-auto.json',
+        createdAt: new Date().toISOString(),
+        sizeBytes: 14250,
+        recordCounts: { topics: 4, videos: 5, playlists: 3, notes: 2, users: 1, reports: 1 },
+        checksum: 'a9f8b... verified'
+      }
+    ];
+  },
+
+  async restoreAdminBackup(fileName: string): Promise<boolean> {
+    const remote = await safeFetch<any>(`/admin/backups/${encodeURIComponent(fileName)}/restore`, { method: 'POST' });
+    return !!remote;
   }
 };

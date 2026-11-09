@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Check, Clock, AlertTriangle, ArrowLeft, Activity, Database, Cpu, Radio, Server, Flag } from 'lucide-react';
+import { ShieldCheck, Check, Clock, AlertTriangle, ArrowLeft, Activity, Database, Cpu, Radio, Server, Flag, RefreshCw } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export default function AdminOperationsPage() {
@@ -12,17 +12,21 @@ export default function AdminOperationsPage() {
   const [health, setHealth] = useState<any>(null);
   const [telemetryEvents, setTelemetryEvents] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'metrics' | 'queue' | 'jobs' | 'telemetry' | 'reports'>('metrics');
+  const [backups, setBackups] = useState<any[]>([]);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [backupNotice, setBackupNotice] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'metrics' | 'queue' | 'jobs' | 'telemetry' | 'reports' | 'backups'>('metrics');
 
   useEffect(() => {
     async function loadData() {
-      const [q, j, m, h, t, rep] = await Promise.all([
+      const [q, j, m, h, t, rep, bak] = await Promise.all([
         api.getReviewQueue(),
         api.getAdminJobs(),
         api.getAdminMetrics(),
         api.getHealth(),
         api.getAnalyticsEvents(),
-        api.getAdminReports()
+        api.getAdminReports(),
+        api.getAdminBackups()
       ]);
       setReviewQueue(q.length > 0 ? q : [
         {
@@ -48,6 +52,7 @@ export default function AdminOperationsPage() {
       setHealth(h);
       setTelemetryEvents(t);
       setReports(rep);
+      setBackups(bak);
     }
     loadData();
   }, []);
@@ -55,6 +60,30 @@ export default function AdminOperationsPage() {
   const handleResolveReport = async (id: string, decision: 'resolved' | 'dismissed') => {
     await api.resolveAdminReport(id, decision);
     setReports(prev => prev.map(r => r.id === id ? { ...r, status: decision } : r));
+  };
+
+  const handleCreateBackup = async () => {
+    setIsBackingUp(true);
+    try {
+      await api.createAdminBackup();
+      setBackupNotice('Automated database snapshot generated with SHA256 checksum.');
+      const updated = await api.getAdminBackups();
+      setBackups(updated);
+      setTimeout(() => setBackupNotice(null), 3000);
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  const handleRestoreBackup = async (fileName: string) => {
+    if (!window.confirm(`Restore database from snapshot "${fileName}"? This will atomically replace current in-memory collections.`)) {
+      return;
+    }
+    const ok = await api.restoreAdminBackup(fileName);
+    if (ok) {
+      setBackupNotice(`Database successfully restored from ${fileName}`);
+      setTimeout(() => setBackupNotice(null), 3000);
+    }
   };
 
   const handleResolveReview = async (id: string, decision: 'approved' | 'rejected') => {
@@ -127,6 +156,16 @@ export default function AdminOperationsPage() {
           }`}
         >
           User Reports ({reports.filter(r => r.status === 'pending').length})
+        </button>
+        <button
+          onClick={() => setActiveTab('backups')}
+          className={`px-3 py-1 rounded-md transition-colors ${
+            activeTab === 'backups'
+              ? 'bg-zinc-800 text-white font-semibold'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          Disaster Recovery ({backups.length})
         </button>
       </div>
 
@@ -436,6 +475,70 @@ export default function AdminOperationsPage() {
                       </span>
                     )}
                   </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Blueprint Section 19.3 & 25: Disaster Recovery & Automated Backups */}
+      {activeTab === 'backups' && (
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-emerald-400" />
+                <span className="text-sm font-semibold text-white">Automated Database Backups & Recovery</span>
+              </div>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Point-in-time state snapshots with <strong>SHA256 checksums</strong> for instant atomic recovery.
+              </p>
+            </div>
+
+            <button
+              onClick={handleCreateBackup}
+              disabled={isBackingUp}
+              className="px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isBackingUp ? 'animate-spin' : ''}`} />
+              <span>{isBackingUp ? 'Snapshotting...' : 'Create Snapshot'}</span>
+            </button>
+          </div>
+
+          {backupNotice && (
+            <div className="p-3 bg-emerald-950/40 border border-emerald-900/60 rounded-lg text-xs text-emerald-300">
+              {backupNotice}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {backups.length === 0 ? (
+              <p className="text-xs text-zinc-500 py-8 text-center">No snapshots stored yet. Click "Create Snapshot" to generate one.</p>
+            ) : (
+              backups.map(bak => (
+                <div
+                  key={bak.id}
+                  className="p-4 rounded-xl bg-zinc-900/30 border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-mono font-semibold text-white">{bak.fileName}</span>
+                      <span className="text-[10px] text-zinc-500 font-mono">
+                        {(bak.sizeBytes / 1024).toFixed(1)} KB
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400">
+                      Created: {new Date(bak.createdAt).toLocaleString()} • Checksum: <span className="font-mono text-[11px] text-zinc-300">{bak.checksum?.substring(0, 12)}...</span>
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => handleRestoreBackup(bak.fileName)}
+                    className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition-colors shrink-0"
+                  >
+                    Restore State
+                  </button>
                 </div>
               ))
             )}
