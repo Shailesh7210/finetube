@@ -10,7 +10,8 @@
     "test": "tsx src/tests/blueprintQualityGates.test.ts",
     "test:simulation": "tsx src/tests/pilotEndToEndSimulation.test.ts",
     "test:backup": "tsx src/tests/disasterRecovery.test.ts",
-    "test:all": "tsx src/tests/blueprintQualityGates.test.ts && tsx src/tests/pilotEndToEndSimulation.test.ts && tsx src/tests/disasterRecovery.test.ts"
+    "test:ndcg": "tsx src/tests/rankingEvaluationNDCG.test.ts",
+    "test:all": "tsx src/tests/blueprintQualityGates.test.ts && tsx src/tests/pilotEndToEndSimulation.test.ts && tsx src/tests/disasterRecovery.test.ts && tsx src/tests/rankingEvaluationNDCG.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
