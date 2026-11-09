@@ -7,7 +7,9 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "tsx src/tests/blueprintQualityGates.test.ts"
+    "test": "tsx src/tests/blueprintQualityGates.test.ts",
+    "test:simulation": "tsx src/tests/pilotEndToEndSimulation.test.ts",
+    "test:all": "tsx src/tests/blueprintQualityGates.test.ts && tsx src/tests/pilotEndToEndSimulation.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
