@@ -188,37 +188,37 @@ function ProfileForm() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 w-full space-y-8">
-      <div className="border-b border-zinc-800 pb-5">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Learning Profile</h1>
+      <div className="border-b border-slate-200 pb-5">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Learning Profile</h1>
       </div>
 
       {isSavedNotice && (
-        <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-900/60 text-sm text-emerald-300 flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-800 flex items-center justify-between">
           <span>Profile updated.</span>
-          <Link href="/feed" className="underline font-semibold hover:text-white">
+          <Link href="/feed" className="underline font-semibold hover:text-emerald-950">
             Open Feed →
           </Link>
         </div>
       )}
 
       {deleteSuccess && (
-        <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-sm text-zinc-400">
+        <div className="p-4 rounded-xl bg-slate-100 border border-slate-300 text-sm text-slate-700">
           Account data purged. Redirecting...
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Education Level & Stream */}
-        <div className="space-y-4 p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
-          <h2 className="text-base font-bold text-white">Education Background</h2>
+        <div className="space-y-4 p-6 rounded-2xl bg-white border border-slate-200 shadow-xs">
+          <h2 className="text-base font-bold text-slate-900">Education Background</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-300 block">Education Level</label>
+              <label className="text-sm font-medium text-slate-700 block">Education Level</label>
               <select
                 value={educationLevel}
                 onChange={(e) => setEducationLevel(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-indigo-500"
               >
                 {EDUCATION_LEVEL_OPTIONS.map(opt => (
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
@@ -227,11 +227,11 @@ function ProfileForm() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-300 block">Academic Stream / Field</label>
+              <label className="text-sm font-medium text-slate-700 block">Academic Stream / Field</label>
               <select
                 value={stream}
                 onChange={(e) => setStream(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-indigo-500"
               >
                 {STREAM_OPTIONS.map(opt => (
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
@@ -242,8 +242,8 @@ function ProfileForm() {
         </div>
 
         {/* Subjects */}
-        <div className="space-y-4 p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
-          <h2 className="text-base font-bold text-white">Subjects</h2>
+        <div className="space-y-4 p-6 rounded-2xl bg-white border border-slate-200 shadow-xs">
+          <h2 className="text-base font-bold text-slate-900">Subjects</h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {allSubjects.map(sub => {
@@ -255,13 +255,13 @@ function ProfileForm() {
                   onClick={() => toggleSubject(sub.id)}
                   className={`text-left p-3.5 rounded-xl border text-sm transition-colors flex items-center justify-between ${
                     isSelected
-                      ? 'bg-zinc-800 border-zinc-600 text-white'
-                      : 'bg-zinc-900/40 border-zinc-800/80 text-zinc-400 hover:border-zinc-700'
+                      ? 'bg-indigo-50 border-indigo-300 text-indigo-950 font-semibold'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
                   }`}
                 >
-                  <span className="font-medium truncate">{sub.name}</span>
+                  <span className="truncate">{sub.name}</span>
                   <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
-                    isSelected ? 'bg-white text-zinc-950 border-white' : 'border-zinc-700'
+                    isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-300 bg-white'
                   }`}>
                     {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
@@ -272,10 +272,10 @@ function ProfileForm() {
         </div>
 
         {/* Specific Topics */}
-        <div className="space-y-4 p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
+        <div className="space-y-4 p-6 rounded-2xl bg-white border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white">Topics</h2>
-            <span className="text-sm text-zinc-400">{followedTopicIds.length} selected</span>
+            <h2 className="text-base font-bold text-slate-900">Topics</h2>
+            <span className="text-sm text-slate-500">{followedTopicIds.length} selected</span>
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
@@ -284,8 +284,8 @@ function ProfileForm() {
               onClick={() => setTopicFilterSubject('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${
                 topicFilterSubject === 'all'
-                  ? 'bg-zinc-100 text-zinc-950 font-semibold'
-                  : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
+                  ? 'bg-slate-900 text-white font-semibold'
+                  : 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900'
               }`}
             >
               {followedSubjectIds.length > 0 ? 'Selected Subjects' : 'All'}
@@ -297,8 +297,8 @@ function ProfileForm() {
                 onClick={() => setTopicFilterSubject(sub.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${
                   topicFilterSubject === sub.id
-                    ? 'bg-zinc-100 text-zinc-950 font-semibold'
-                    : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
+                    ? 'bg-slate-900 text-white font-semibold'
+                    : 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {sub.name}
@@ -316,13 +316,13 @@ function ProfileForm() {
                   onClick={() => toggleTopic(topic.id)}
                   className={`text-left p-3.5 rounded-xl border text-sm transition-colors flex items-center justify-between gap-2 ${
                     selected
-                      ? 'bg-zinc-800 border-zinc-600 text-white'
-                      : 'bg-zinc-900/40 border-zinc-800/80 text-zinc-400 hover:border-zinc-700'
+                      ? 'bg-indigo-50 border-indigo-300 text-indigo-950 font-semibold'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
                   }`}
                 >
-                  <span className="font-medium text-zinc-200 truncate">{topic.name}</span>
+                  <span className="truncate">{topic.name}</span>
                   <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
-                    selected ? 'bg-white text-zinc-950 border-white' : 'border-zinc-700'
+                    selected ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-300 bg-white'
                   }`}>
                     {selected && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
@@ -333,8 +333,8 @@ function ProfileForm() {
         </div>
 
         {/* Custom Interests */}
-        <div className="space-y-4 p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
-          <h2 className="text-base font-bold text-white">Custom Interests</h2>
+        <div className="space-y-4 p-6 rounded-2xl bg-white border border-slate-200 shadow-xs">
+          <h2 className="text-base font-bold text-slate-900">Custom Interests</h2>
 
           <div className="flex items-center gap-2.5">
             <input
@@ -342,7 +342,7 @@ function ProfileForm() {
               value={newTagInput}
               onChange={(e) => setNewTagInput(e.target.value)}
               placeholder="e.g. Organic Chemistry, Anatomy, French Revolution..."
-              className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+              className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -353,7 +353,7 @@ function ProfileForm() {
             <button
               type="button"
               onClick={handleAddCustomInterest}
-              className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium transition-colors shrink-0 inline-flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors shrink-0 inline-flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> Add
             </button>
@@ -364,13 +364,13 @@ function ProfileForm() {
               {customInterests.map(tag => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-zinc-800 text-zinc-200 border border-zinc-700"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-slate-100 text-slate-800 border border-slate-200"
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => handleRemoveCustomInterest(tag)}
-                    className="text-zinc-400 hover:text-white"
+                    className="text-slate-400 hover:text-slate-900"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -381,16 +381,16 @@ function ProfileForm() {
         </div>
 
         {/* Workspace Mode & Account Info */}
-        <div className="space-y-4 p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
-          <h2 className="text-base font-bold text-white">Workspace & Preferences</h2>
+        <div className="space-y-4 p-6 rounded-2xl bg-white border border-slate-200 shadow-xs">
+          <h2 className="text-base font-bold text-slate-900">Workspace & Preferences</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-300 block">Default Workspace Tool</label>
+              <label className="text-sm font-medium text-slate-700 block">Default Workspace Tool</label>
               <select
                 value={workspaceMode}
                 onChange={(e) => setWorkspaceMode(e.target.value as any)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-indigo-500"
               >
                 <option value="auto">Auto-Detect by Subject</option>
                 <option value="concepts">Concept Cards (Medicine / Humanities)</option>
@@ -401,11 +401,11 @@ function ProfileForm() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-300 block">Daily Goal</label>
+              <label className="text-sm font-medium text-slate-700 block">Daily Goal</label>
               <select
                 value={dailyGoalMinutes}
                 onChange={(e) => setDailyGoalMinutes(Number(e.target.value))}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-indigo-500"
               >
                 <option value={15}>15 minutes / day</option>
                 <option value={30}>30 minutes / day</option>
@@ -416,24 +416,24 @@ function ProfileForm() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-300 block">Display Name</label>
+              <label className="text-sm font-medium text-slate-700 block">Display Name</label>
               <input
                 type="text"
                 required
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-indigo-500"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-300 block">Learning Goal</label>
+              <label className="text-sm font-medium text-slate-700 block">Learning Goal</label>
               <input
                 type="text"
                 value={learningGoal}
                 onChange={(e) => setLearningGoal(e.target.value)}
                 placeholder="e.g. Class 12 Boards"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
               />
             </div>
           </div>
@@ -444,33 +444,33 @@ function ProfileForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-7 py-3 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-sm font-bold transition-colors disabled:opacity-50"
+            className="px-7 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold transition-colors disabled:opacity-50"
           >
             {isSubmitting ? 'Saving...' : 'Save Profile'}
           </button>
 
           <Link
             href="/settings/interests"
-            className="text-sm text-zinc-400 hover:text-white underline transition-colors"
+            className="text-sm text-indigo-600 hover:underline font-medium"
           >
             Manage Feed Filters →
           </Link>
         </div>
       </form>
 
-      <div className="pt-8 border-t border-zinc-800/80">
+      <div className="pt-8 border-t border-slate-200">
         <UsageQuotaCard />
       </div>
 
       {/* Privacy & Data */}
-      <div className="pt-8 border-t border-zinc-800/80 space-y-4">
-        <h2 className="text-base font-bold text-zinc-300">Data & Privacy</h2>
+      <div className="pt-8 border-t border-slate-200 space-y-4">
+        <h2 className="text-base font-bold text-slate-800">Data & Privacy</h2>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             type="button"
             onClick={handleExportData}
             disabled={isExporting}
-            className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-sm text-zinc-200 transition-colors disabled:opacity-50"
+            className="px-4 py-2.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-sm text-slate-700 font-medium transition-colors disabled:opacity-50"
           >
             {isExporting ? 'Exporting...' : 'Export Data (JSON)'}
           </button>
@@ -479,7 +479,7 @@ function ProfileForm() {
             type="button"
             onClick={handleDeleteAccount}
             disabled={isDeleting}
-            className="px-4 py-2.5 rounded-xl bg-rose-950/20 border border-rose-900/40 hover:bg-rose-950/40 text-sm text-rose-300 transition-colors disabled:opacity-50"
+            className="px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-sm text-rose-700 font-medium transition-colors disabled:opacity-50"
           >
             {isDeleting ? 'Deleting...' : 'Delete Account'}
           </button>
@@ -491,7 +491,7 @@ function ProfileForm() {
 
 export default function ProfilePage() {
   return (
-    <Suspense fallback={<div className="p-10 text-sm text-zinc-500">Loading profile...</div>}>
+    <Suspense fallback={<div className="p-10 text-sm text-slate-500">Loading profile...</div>}>
       <ProfileForm />
     </Suspense>
   );

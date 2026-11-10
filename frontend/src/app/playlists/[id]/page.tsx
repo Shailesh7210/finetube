@@ -70,8 +70,8 @@ export default function PlaylistDetailPage() {
   if (!playlist) {
     return (
       <div className="max-w-4xl mx-auto py-16 px-4 text-center space-y-3">
-        <h2 className="text-lg font-medium text-white">Playlist not found</h2>
-        <Link href="/playlists" className="text-sm text-blue-400 hover:underline">
+        <h2 className="text-lg font-medium text-slate-900">Playlist not found</h2>
+        <Link href="/playlists" className="text-sm text-indigo-600 hover:underline">
           Back to Learning Paths
         </Link>
       </div>
@@ -106,21 +106,21 @@ export default function PlaylistDetailPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
       <Link
         href="/playlists"
-        className="text-sm text-zinc-400 hover:text-white inline-flex items-center gap-1.5 transition-colors"
+        className="text-sm text-slate-500 hover:text-slate-900 inline-flex items-center gap-1.5 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Learning Paths
       </Link>
 
       {/* Playlist Header */}
-      <div className="border-b border-zinc-800 pb-6 space-y-3">
+      <div className="border-b border-slate-200 pb-6 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="text-sm text-zinc-400 font-medium">
+            <div className="text-sm text-indigo-600 font-medium">
               {subject ? `${subject.name} · ` : ''}{topic ? topic.name : 'Learning Path'}
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{playlist.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{playlist.title}</h1>
             {playlist.description && (
-              <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl pt-1">
+              <p className="text-sm text-slate-600 leading-relaxed max-w-2xl pt-1">
                 {playlist.description}
               </p>
             )}
@@ -129,7 +129,7 @@ export default function PlaylistDetailPage() {
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={() => setIsRateModalOpen(true)}
-              className="px-4 py-2 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-sm font-semibold text-zinc-200 inline-flex items-center gap-1.5 transition-colors"
+              className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-sm font-semibold text-slate-800 inline-flex items-center gap-1.5 transition-colors"
             >
               <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
               <span>Rate</span>
@@ -137,7 +137,7 @@ export default function PlaylistDetailPage() {
 
             <button
               onClick={handleForkPlaylist}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-semibold text-white transition-colors"
+              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold text-white transition-colors"
             >
               {isForkedNotice ? 'Saved Copy' : 'Save Copy'}
             </button>
@@ -148,7 +148,7 @@ export default function PlaylistDetailPage() {
       {/* Lessons List */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 className="text-lg font-bold text-white">
+          <h2 className="text-lg font-bold text-slate-900">
             Lessons ({items.length})
           </h2>
           {availableVideos.length > 0 && (
@@ -156,7 +156,7 @@ export default function PlaylistDetailPage() {
               <select
                 value={selectedAddVideoId}
                 onChange={e => setSelectedAddVideoId(e.target.value)}
-                className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-200 max-w-[240px] focus:outline-none focus:border-zinc-600"
+                className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-800 max-w-[240px] focus:outline-none focus:border-indigo-500"
               >
                 {availableVideos.map(v => (
                   <option key={v.id} value={v.id}>{v.title}</option>
@@ -164,7 +164,7 @@ export default function PlaylistDetailPage() {
               </select>
               <button
                 onClick={handleAddVideo}
-                className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm font-semibold text-white inline-flex items-center gap-1.5 transition-colors"
+                className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-sm font-semibold text-white inline-flex items-center gap-1.5 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add</span>
@@ -181,21 +181,21 @@ export default function PlaylistDetailPage() {
             return (
               <div
                 key={item.id || idx}
-                className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700/80 transition-colors flex items-center justify-between gap-4"
+                className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 transition-colors flex items-center justify-between gap-4 shadow-xs"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-sm font-mono font-bold text-zinc-200 shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-sm font-mono font-bold text-slate-700 shrink-0">
                     {idx + 1}
                   </div>
 
                   <div>
                     <Link
                       href={`/watch/${video.id}`}
-                      className="text-base font-bold text-zinc-100 hover:text-blue-400 transition-colors"
+                      className="text-base font-bold text-slate-900 hover:text-indigo-600 transition-colors"
                     >
                       {video.title}
                     </Link>
-                    <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                       <span>{video.channelTitle}</span>
                       <span>•</span>
                       <span>{formatDuration(video.durationSeconds)}</span>
@@ -208,7 +208,7 @@ export default function PlaylistDetailPage() {
                     onClick={() => moveItem(idx, 'up')}
                     disabled={idx === 0}
                     title="Move up"
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white disabled:opacity-20 transition-colors"
+                    className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-colors"
                   >
                     <MoveUp className="w-4 h-4" />
                   </button>
@@ -216,13 +216,13 @@ export default function PlaylistDetailPage() {
                     onClick={() => moveItem(idx, 'down')}
                     disabled={idx === items.length - 1}
                     title="Move down"
-                    className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white disabled:opacity-20 transition-colors"
+                    className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-colors"
                   >
                     <MoveDown className="w-4 h-4" />
                   </button>
                   <Link
                     href={`/watch/${video.id}`}
-                    className="ml-2 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm font-semibold text-white transition-colors"
+                    className="ml-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-sm font-semibold text-white transition-colors"
                   >
                     Watch
                   </Link>

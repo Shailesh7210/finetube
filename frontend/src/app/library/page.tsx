@@ -37,8 +37,8 @@ export default function LibraryPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-800 pb-5">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Study Library</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Study Library</h1>
 
         <div className="w-full sm:w-72">
           <input
@@ -46,7 +46,7 @@ export default function LibraryPage() {
             placeholder="Search library..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+            className="w-full px-4 py-2 text-sm bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
           />
         </div>
       </div>
@@ -57,12 +57,12 @@ export default function LibraryPage() {
             onClick={() => setSelectedFolder('all')}
             className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-between ${
               selectedFolder === 'all'
-                ? 'bg-zinc-800 text-white font-semibold'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
+                ? 'bg-slate-900 text-white font-semibold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
             <span>All Notes</span>
-            <span className="font-mono text-xs text-zinc-500">{notes.length}</span>
+            <span className="font-mono text-xs opacity-70">{notes.length}</span>
           </button>
 
           {folders.map(f => {
@@ -76,12 +76,12 @@ export default function LibraryPage() {
                 onClick={() => setSelectedFolder(f.id)}
                 className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-between ${
                   selectedFolder === f.id
-                    ? 'bg-zinc-800 text-white font-semibold'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
+                    ? 'bg-slate-900 text-white font-semibold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
               >
                 <span>{f.name}</span>
-                <span className="font-mono text-xs text-zinc-500">{count}</span>
+                <span className="font-mono text-xs opacity-70">{count}</span>
               </button>
             );
           })}
@@ -93,19 +93,19 @@ export default function LibraryPage() {
               {playlists.map(pl => (
                 <div
                   key={pl.id}
-                  className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800 flex items-center justify-between gap-4"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 flex items-center justify-between gap-4 shadow-xs"
                 >
                   <div className="space-y-1">
-                    <h3 className="text-base font-bold text-white">{pl.title}</h3>
-                    <p className="text-sm text-zinc-400 line-clamp-1">{pl.description}</p>
-                    <div className="text-xs text-zinc-500 pt-1">
+                    <h3 className="text-base font-bold text-slate-900">{pl.title}</h3>
+                    <p className="text-sm text-slate-600 line-clamp-1">{pl.description}</p>
+                    <div className="text-xs text-slate-500 pt-1">
                       {pl.items.length} lessons · ~{pl.estimatedTotalMinutes}m
                     </div>
                   </div>
 
                   <Link
                     href={`/playlists/${pl.id}`}
-                    className="shrink-0 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm font-semibold text-white transition-colors"
+                    className="shrink-0 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-sm font-semibold text-white transition-colors"
                   >
                     Open →
                   </Link>
@@ -113,7 +113,7 @@ export default function LibraryPage() {
               ))}
             </div>
           ) : filteredNotes.length === 0 ? (
-            <div className="py-14 text-center text-sm text-zinc-500 border border-dashed border-zinc-800 rounded-2xl">
+            <div className="py-14 text-center text-sm text-slate-500 border border-dashed border-slate-300 rounded-2xl bg-white">
               No saved items yet.
             </div>
           ) : (
@@ -124,33 +124,35 @@ export default function LibraryPage() {
               return (
                 <div
                   key={note.id}
-                  className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700/80 transition-colors space-y-3 group"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 shadow-xs transition-colors space-y-3 group"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs text-zinc-500">
-                        <span>{isCodeSnippet ? 'Code Snippet' : note.type === 'AI_GENERATED' ? 'AI Note' : 'Note'}</span>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="font-medium text-indigo-600">
+                          {isCodeSnippet ? 'Code Snippet' : note.type === 'AI_GENERATED' ? 'AI Note' : 'Note'}
+                        </span>
                         {note.source?.timestampSeconds !== undefined && (
                           <span>· {formatTimestamp(note.source.timestampSeconds)}</span>
                         )}
                       </div>
-                      <h3 className="text-base font-bold text-white">{note.title}</h3>
+                      <h3 className="text-base font-bold text-slate-900">{note.title}</h3>
                     </div>
 
                     <div className="flex items-center gap-1">
                       {isCodeSnippet && note.content.text && (
                         <button
                           onClick={() => handleCopy(note.id, note.content.text || '')}
-                          className="p-1.5 text-zinc-400 hover:text-white transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-slate-900 transition-colors"
                           title="Copy"
                         >
-                          {copiedId === note.id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                          {copiedId === note.id ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                         </button>
                       )}
 
                       <button
                         onClick={() => handleDelete(note.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-500 hover:text-rose-400 transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-600 transition-all"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -159,17 +161,17 @@ export default function LibraryPage() {
                   </div>
 
                   {isCodeSnippet && note.content.text ? (
-                    <div className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded-xl font-mono text-xs text-zinc-300 overflow-x-auto">
+                    <div className="p-3.5 bg-slate-100 border border-slate-200 rounded-xl font-mono text-xs text-slate-800 overflow-x-auto">
                       <pre><code>{note.content.text}</code></pre>
                     </div>
                   ) : note.content.sections && note.content.sections.length > 0 ? (
-                    <div className="space-y-2.5 text-sm text-zinc-400">
+                    <div className="space-y-2.5 text-sm text-slate-600">
                       {note.content.sections.map((sec, i) => (
-                        <div key={i} className="p-3 bg-zinc-950/60 rounded-xl border border-zinc-800/60 space-y-1">
-                          <h4 className="font-semibold text-zinc-200">{sec.heading}</h4>
+                        <div key={i} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                          <h4 className="font-semibold text-slate-900">{sec.heading}</h4>
                           <p className="leading-relaxed">{sec.body}</p>
                           {sec.codeSnippet && (
-                            <pre className="p-2.5 bg-zinc-900 rounded-lg font-mono text-xs text-emerald-400 mt-1 overflow-x-auto">
+                            <pre className="p-2.5 bg-slate-900 rounded-lg font-mono text-xs text-emerald-300 mt-1.5 overflow-x-auto">
                               <code>{sec.codeSnippet}</code>
                             </pre>
                           )}
@@ -178,17 +180,17 @@ export default function LibraryPage() {
                     </div>
                   ) : (
                     note.content.text && (
-                      <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                      <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
                         {note.content.text}
                       </p>
                     )
                   )}
 
-                  <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60 text-xs text-zinc-500">
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
                     {video ? (
                       <Link
                         href={`/watch/${video.id}`}
-                        className="text-blue-400 hover:text-blue-300 font-medium"
+                        className="text-indigo-600 hover:text-indigo-700 font-medium"
                       >
                         Open Video ({video.title.slice(0, 36)}...) →
                       </Link>

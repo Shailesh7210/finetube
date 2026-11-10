@@ -77,84 +77,79 @@ export function PersonalNotesPanel({
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      {/* Header Actions */}
       {notes.length > 0 && (
-        <div className="flex items-center justify-between text-xs pb-1 border-b border-zinc-800/80">
-          <span className="text-zinc-500 font-mono text-[11px]">{notes.length} saved notes</span>
+        <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-200">
+          <span className="text-slate-500 font-mono">{notes.length} notes</span>
           <button
             onClick={handleExportMarkdown}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
             title="Download Notes as Markdown (.md)"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export (.md)</span>
+            <span>Export</span>
           </button>
         </div>
       )}
-      {/* Input */}
-      <form onSubmit={handleAdd} className="space-y-2">
+
+      <form onSubmit={handleAdd} className="space-y-2.5">
         <div className="flex items-center gap-2">
           <input
             type="text"
             placeholder="Title (optional)..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="flex-1 bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+            className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
           />
-          <button
-            type="button"
-            className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[11px] font-mono text-zinc-400"
-          >
+          <span className="px-2.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-600">
             {formatTimestamp(currentTime)}
-          </button>
+          </span>
         </div>
 
         <textarea
-          placeholder="Take a note..."
+          placeholder="Take a timestamped note..."
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={3}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded p-2.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 resize-none"
+          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500 resize-none"
         />
 
         <div className="flex justify-end">
           <button
             type="submit"
             disabled={!text.trim()}
-            className="px-3 py-1 bg-zinc-100 hover:bg-white text-zinc-950 font-medium rounded text-xs transition-colors disabled:opacity-40"
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-xs transition-colors disabled:opacity-40"
           >
             Save Note
           </button>
         </div>
       </form>
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+      <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
         {notes.length === 0 ? (
-          <p className="text-xs text-zinc-500 text-center py-6">No notes yet.</p>
+          <p className="text-sm text-slate-400 text-center py-8">No notes yet.</p>
         ) : (
           notes.map(n => (
-            <div key={n.id} className="p-3 bg-zinc-900/60 rounded-md border border-zinc-800/60 space-y-1.5 group">
+            <div key={n.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 group">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-zinc-200">{n.title}</span>
+                <span className="font-semibold text-slate-900">{n.title}</span>
                 <div className="flex items-center gap-2">
                   {n.source?.timestampSeconds !== undefined && (
                     <button
                       onClick={() => onSeek(n.source!.timestampSeconds!)}
-                      className="font-mono text-[11px] text-blue-400 hover:underline"
+                      className="font-mono text-xs text-indigo-600 hover:underline font-medium"
                     >
                       {formatTimestamp(n.source.timestampSeconds)}
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(n.id)}
-                    className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-zinc-300 transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 transition-opacity"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed whitespace-pre-wrap">
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
                 {n.content.text}
               </p>
             </div>
