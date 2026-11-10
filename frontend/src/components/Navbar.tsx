@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, LogOut, User, Plus } from 'lucide-react';
+import { Search, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
@@ -32,15 +32,13 @@ export function Navbar() {
 
   return (
     <div className="sticky top-3 z-50 w-full px-4 sm:px-6 pointer-events-none">
-      <header className="max-w-6xl mx-auto h-14 rounded-2xl border border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl shadow-2xl shadow-black/60 px-4 sm:px-5 flex items-center justify-between gap-4 pointer-events-auto transition-all">
-        {/* Brand with New Logo */}
-        <div className="flex items-center gap-7">
+      <header className="max-w-7xl mx-auto h-16 rounded-2xl border border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl shadow-2xl shadow-black/60 px-5 sm:px-6 flex items-center justify-between gap-4 pointer-events-auto transition-all">
+        <div className="flex items-center gap-8">
           <Link href={isAuthenticated ? '/feed' : '/'} className="transition-transform hover:scale-[1.02]">
-            <Logo size={28} />
+            <Logo size={32} />
           </Link>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1.5">
             {currentLinks.map((link) => {
               const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
               return (
@@ -48,9 +46,9 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    "px-3.5 py-2 rounded-lg text-sm font-medium transition-all",
                     isActive
-                      ? "bg-zinc-800 text-white font-semibold shadow-inner"
+                      ? "bg-zinc-800 text-white font-semibold"
                       : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/60"
                   )}
                 >
@@ -61,26 +59,16 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Search Bar & Auth Actions */}
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => setIsIngestOpen(true)}
-            className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-xs font-semibold text-zinc-300 hover:text-white transition-colors"
-            title="Ingest Educational Video"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Ingest</span>
-          </button>
-
-          <form action="/search" method="GET" className="relative w-36 sm:w-52 hidden sm:block">
-            <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="flex items-center gap-3">
+          <form action="/search" method="GET" className="relative w-44 sm:w-64 hidden sm:block">
+            <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               name="q"
-              placeholder="Search any subject or topic..."
+              placeholder="Search any subject..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-zinc-900/90 text-xs border border-zinc-800/90 rounded-lg pl-8 pr-3 py-1.5 text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/20 transition-all"
+              className="w-full bg-zinc-900/90 text-sm border border-zinc-800/90 rounded-xl pl-10 pr-3.5 py-2 text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition-all"
             />
           </form>
 
@@ -88,10 +76,9 @@ export function Navbar() {
             <div className="flex items-center gap-2">
               <Link
                 href="/profile"
-                className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-lg text-xs font-medium bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-200 hover:text-white transition-all shadow-sm"
-                title="Customize Profile"
+                className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-xl text-sm font-medium bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-200 hover:text-white transition-all"
               >
-                <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-xs font-bold text-white uppercase">
                   {user.displayName.charAt(0)}
                 </div>
                 <span className="hidden sm:inline font-semibold">{user.displayName.split(' ')[0]}</span>
@@ -99,23 +86,23 @@ export function Navbar() {
 
               <button
                 onClick={logout}
-                className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-900 rounded-lg transition-colors"
+                className="p-2 text-zinc-400 hover:text-rose-400 hover:bg-zinc-900 rounded-lg transition-colors"
                 title="Log out"
               >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <Link
                 href="/login"
-                className="px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:text-white transition-colors"
+                className="px-3.5 py-2 text-sm font-semibold text-zinc-300 hover:text-white transition-colors"
               >
                 Log in
               </Link>
               <Link
                 href="/signup"
-                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-zinc-950 hover:bg-zinc-100 shadow-sm transition-all"
+                className="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-zinc-950 hover:bg-zinc-200 shadow-sm transition-all"
               >
                 Sign up
               </Link>

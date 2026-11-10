@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { notFound, useParams } from 'next/navigation';
-import { Star, Bookmark, Check, Keyboard, X, Flag, Calculator, BookOpen, Code2, ChevronDown } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { Star, Keyboard, X, Flag } from 'lucide-react';
 import { store } from '@/lib/store';
 import { VideoPlayer, VideoPlayerRef } from '@/components/workspace/VideoPlayer';
 import { PersonalNotesPanel } from '@/components/workspace/PersonalNotesPanel';
@@ -36,7 +36,6 @@ export default function WatchPage() {
   const video = store.getVideoById(videoId);
   const topic = video ? store.getTopics().find(t => t.id === video.primaryTopicId) : undefined;
 
-  // Determine initial adaptive tool mode based on user profile or subject
   const initialAdaptiveMode: AdaptiveToolMode = useMemo(() => {
     const user = store.getCurrentUser() || store.user;
     if (user?.workspaceMode && user.workspaceMode !== 'auto') {
@@ -50,7 +49,6 @@ export default function WatchPage() {
     const domain = (topic?.domain || '').toLowerCase();
     const subjectId = (topic?.subjectId || '').toLowerCase();
 
-    // STEM Math, Physics, Chemistry
     if (
       tId.includes('physics') ||
       tId.includes('math') ||
@@ -63,7 +61,6 @@ export default function WatchPage() {
       return 'math';
     }
 
-    // CS & Programming
     if (
       tId.includes('react') ||
       tId.includes('dsa') ||
@@ -77,7 +74,6 @@ export default function WatchPage() {
       return 'code';
     }
 
-    // Default for Medicine, Humanities, History, Law, Economics, General
     return 'concepts';
   }, [video, topic]);
 
@@ -129,9 +125,9 @@ export default function WatchPage() {
 
   if (!video) {
     return (
-      <div className="max-w-4xl mx-auto py-16 px-4 text-center space-y-3">
-        <h2 className="text-base font-medium text-white">Video not found</h2>
-        <Link href="/" className="text-xs text-blue-400 hover:underline">
+      <div className="max-w-4xl mx-auto py-20 px-4 text-center space-y-3">
+        <h2 className="text-lg font-medium text-white">Video not found</h2>
+        <Link href="/feed" className="text-sm text-blue-400 hover:underline">
           Return to feed
         </Link>
       </div>
@@ -166,8 +162,8 @@ export default function WatchPage() {
   };
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-8 py-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
         {/* Left: Video Player (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           <VideoPlayer
@@ -177,18 +173,24 @@ export default function WatchPage() {
             onTimeUpdate={(time) => setCurrentTime(time)}
           />
 
-          <div className="space-y-3">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-lg font-semibold text-zinc-100">
+          <div className="space-y-3 pt-1">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div className="space-y-1.5">
+                <h1 className="text-xl sm:text-2xl font-bold text-zinc-100 leading-snug">
                   {video.title}
                 </h1>
-                <div className="flex items-center gap-3 text-xs text-zinc-400 mt-1">
-                  <span>{video.channelTitle}</span>
-                  {topic && <span>• {topic.name}</span>}
-                  <span className="flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    {bayesianRating} ({video.ratingCount})
+                <div className="flex items-center gap-3 text-sm text-zinc-400">
+                  <span className="font-medium text-zinc-300">{video.channelTitle}</span>
+                  {topic && (
+                    <>
+                      <span className="text-zinc-600">•</span>
+                      <span>{topic.name}</span>
+                    </>
+                  )}
+                  <span className="text-zinc-600">•</span>
+                  <span className="flex items-center gap-1 text-zinc-200 font-medium">
+                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    {bayesianRating}
                   </span>
                 </div>
               </div>
@@ -197,40 +199,42 @@ export default function WatchPage() {
                 <button
                   onClick={handleSaveToLibrary}
                   disabled={isSaved}
-                  className="px-2.5 py-1.5 rounded-md text-xs font-medium text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 transition-colors"
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-zinc-200 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
                 >
                   {isSaved ? 'Saved' : 'Save'}
                 </button>
                 <button
                   onClick={() => setIsRatingModalOpen(true)}
-                  className="px-2.5 py-1.5 rounded-md text-xs font-medium text-white bg-zinc-800 hover:bg-zinc-700 transition-colors"
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-zinc-800 hover:bg-zinc-700 transition-colors"
                 >
                   Rate
                 </button>
                 <button
                   onClick={() => setIsReportModalOpen(true)}
-                  title="Report inaccuracy or misleading content"
-                  className="p-1.5 rounded-md text-zinc-400 hover:text-amber-400 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
+                  title="Report inaccuracy"
+                  className="p-2 rounded-xl text-zinc-400 hover:text-amber-400 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
                   aria-label="Report inaccuracy"
                 >
-                  <Flag className="w-3.5 h-3.5" />
+                  <Flag className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <p className="text-xs text-zinc-400 leading-relaxed pt-1">
-              {video.description}
-            </p>
+            {video.description && (
+              <p className="text-sm text-zinc-400 leading-relaxed pt-1">
+                {video.description}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Right: Workspace Tools (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col h-[560px] sm:h-[650px] border border-zinc-800/80 rounded-lg overflow-hidden bg-zinc-950">
-          {/* Mobile-responsive Tabs Bar with Subject-Adaptive Tool */}
+        {/* Right: Adaptive Study Workspace (5 cols) */}
+        <div className="lg:col-span-5 flex flex-col h-[600px] lg:h-[700px] border border-zinc-800/80 rounded-2xl overflow-hidden bg-zinc-950">
+          {/* Clean Tabs Bar */}
           <div className="flex items-center border-b border-zinc-800/80 bg-zinc-900/50 overflow-x-auto scrollbar-none shrink-0">
             <button
               onClick={() => setActiveTab('notes')}
-              className={`min-w-[58px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
+              className={`min-w-[68px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'notes'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -239,26 +243,20 @@ export default function WatchPage() {
               Notes
             </button>
 
-            {/* Adaptive Tool Tab (Formulas | Concepts | Code) */}
             <button
               onClick={() => setActiveTab('adaptive')}
-              className={`min-w-[76px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center inline-flex items-center justify-center gap-1 ${
+              className={`min-w-[82px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'adaptive'
                   ? 'border-blue-400 text-blue-400 font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              {adaptiveToolMode === 'math' && <Calculator className="w-3 h-3 text-blue-400" />}
-              {adaptiveToolMode === 'concepts' && <BookOpen className="w-3 h-3 text-emerald-400" />}
-              {adaptiveToolMode === 'code' && <Code2 className="w-3 h-3 text-amber-400" />}
-              <span>
-                {adaptiveToolMode === 'math' ? 'Formulas' : adaptiveToolMode === 'concepts' ? 'Concepts' : 'Code'}
-              </span>
+              {adaptiveToolMode === 'math' ? 'Formulas' : adaptiveToolMode === 'concepts' ? 'Concepts' : 'Code'}
             </button>
 
             <button
               onClick={() => setActiveTab('quiz')}
-              className={`min-w-[58px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
+              className={`min-w-[64px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'quiz'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -266,9 +264,10 @@ export default function WatchPage() {
             >
               Quiz
             </button>
+
             <button
               onClick={() => setActiveTab('ai_notes')}
-              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
+              className={`min-w-[78px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'ai_notes'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -276,9 +275,10 @@ export default function WatchPage() {
             >
               AI Notes
             </button>
+
             <button
               onClick={() => setActiveTab('ask_ai')}
-              className={`min-w-[58px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
+              className={`min-w-[68px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'ask_ai'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -286,9 +286,10 @@ export default function WatchPage() {
             >
               Ask AI
             </button>
+
             <button
               onClick={() => setActiveTab('chapters')}
-              className={`min-w-[62px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
+              className={`min-w-[78px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'chapters'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -298,43 +299,38 @@ export default function WatchPage() {
             </button>
           </div>
 
-          {/* Sub-header tool switcher for Adaptive Tool */}
+          {/* Sub-header mode switcher for Adaptive Tool */}
           {activeTab === 'adaptive' && (
-            <div className="px-3 py-1.5 bg-zinc-900/90 border-b border-zinc-800/80 flex items-center justify-between text-[11px]">
-              <span className="text-zinc-400">
-                Workspace Tool: <strong className="text-zinc-200 capitalize">{adaptiveToolMode}</strong>
-              </span>
-              <div className="flex items-center gap-1">
+            <div className="px-4 py-2 bg-zinc-900/80 border-b border-zinc-800/80 flex items-center justify-between text-xs">
+              <span className="text-zinc-400">Tool</span>
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setAdaptiveToolMode('math')}
-                  className={`px-2 py-0.5 rounded transition-colors ${
+                  className={`px-2.5 py-1 rounded-lg transition-colors ${
                     adaptiveToolMode === 'math'
-                      ? 'bg-blue-600/30 text-blue-300 font-semibold border border-blue-500/40'
+                      ? 'bg-zinc-800 text-white font-semibold'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
-                  title="Formula & Equation Scratchpad (Math, Physics, Chemistry)"
                 >
                   Formulas
                 </button>
                 <button
                   onClick={() => setAdaptiveToolMode('concepts')}
-                  className={`px-2 py-0.5 rounded transition-colors ${
+                  className={`px-2.5 py-1 rounded-lg transition-colors ${
                     adaptiveToolMode === 'concepts'
-                      ? 'bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40'
+                      ? 'bg-zinc-800 text-white font-semibold'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
-                  title="Structured Concept & Terminology Flashcards (Medicine, Humanities, Biology)"
                 >
                   Concepts
                 </button>
                 <button
                   onClick={() => setAdaptiveToolMode('code')}
-                  className={`px-2 py-0.5 rounded transition-colors ${
+                  className={`px-2.5 py-1 rounded-lg transition-colors ${
                     adaptiveToolMode === 'code'
-                      ? 'bg-amber-600/30 text-amber-300 font-semibold border border-amber-500/40'
+                      ? 'bg-zinc-800 text-white font-semibold'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
-                  title="Code Sandbox & Invariant Editor (Computer Science, Programming)"
                 >
                   Code
                 </button>
@@ -397,15 +393,15 @@ export default function WatchPage() {
             )}
 
             {activeTab === 'chapters' && (
-              <div className="space-y-1.5 overflow-y-auto h-full">
+              <div className="space-y-2 overflow-y-auto h-full">
                 {video.chapters.map((chap, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSeek(chap.start)}
-                    className="w-full text-left p-2.5 rounded-md hover:bg-zinc-900 flex items-center justify-between text-xs text-zinc-300 transition-colors"
+                    className="w-full text-left p-3 rounded-xl hover:bg-zinc-900 flex items-center justify-between text-sm text-zinc-300 transition-colors"
                   >
                     <span>{chap.title}</span>
-                    <span className="font-mono text-zinc-500 text-[11px] shrink-0">
+                    <span className="font-mono text-zinc-500 text-xs shrink-0">
                       {formatTimestamp(chap.start)}
                     </span>
                   </button>
@@ -416,19 +412,15 @@ export default function WatchPage() {
         </div>
       </div>
 
-      {/* Floating Keyboard Shortcuts Trigger */}
-      <div className="pt-4 flex items-center justify-between text-xs text-zinc-500 border-t border-zinc-900 mt-6">
+      {/* Minimal Shortcuts Trigger */}
+      <div className="pt-4 mt-6 border-t border-zinc-900 flex items-center">
         <button
           onClick={() => setShowShortcutsModal(true)}
-          className="inline-flex items-center gap-1.5 font-mono text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
+          className="inline-flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
         >
-          <kbd className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400">?</kbd>
-          <span>Accessible Keyboard Shortcuts</span>
+          <kbd className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-400">?</kbd>
+          <span>Shortcuts</span>
         </button>
-
-        <span className="text-[11px] text-zinc-600 font-mono">
-          FineTube Adaptive Universal Workspace v2.0
-        </span>
       </div>
 
       <RatingModal
@@ -445,14 +437,13 @@ export default function WatchPage() {
         targetTitle={video.title}
       />
 
-      {/* Keyboard Shortcuts Modal */}
       {showShortcutsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-xl p-5 text-zinc-100 shadow-2xl relative space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-zinc-100 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Keyboard className="w-4 h-4 text-indigo-400" />
-                <span>Keyboard Shortcuts (Blueprint §9.1)</span>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Keyboard className="w-4 h-4 text-zinc-400" />
+                <span>Keyboard Shortcuts</span>
               </h3>
               <button
                 onClick={() => setShowShortcutsModal(false)}
@@ -462,51 +453,30 @@ export default function WatchPage() {
               </button>
             </div>
 
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
-                <span className="text-zinc-400">Switch to Notes</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">1</kbd>
+            <div className="space-y-2.5 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">Notes</span>
+                <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-xs">1</kbd>
               </div>
-              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
-                <span className="text-zinc-400">Switch to Adaptive Tool (Formulas / Concepts / Code)</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">2</kbd>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">Adaptive Tool</span>
+                <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-xs">2</kbd>
               </div>
-              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
-                <span className="text-zinc-400">Switch to Concept Quiz</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">3</kbd>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">Quiz / AI Notes / Ask AI / Chapters</span>
+                <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-xs">3 – 6</kbd>
               </div>
-              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
-                <span className="text-zinc-400">Switch to AI Notes</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">4</kbd>
-              </div>
-              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
-                <span className="text-zinc-400">Switch to Ask AI</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">5</kbd>
-              </div>
-              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
-                <span className="text-zinc-400">Switch to Chapters</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">6</kbd>
-              </div>
-              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
-                <span className="text-zinc-400">Seek Backward / Forward 10s</span>
-                <div className="flex items-center gap-1 font-mono text-[10px]">
-                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800">J</kbd>
-                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800">L</kbd>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">Seek ±10s</span>
+                <div className="flex items-center gap-1 font-mono text-xs">
+                  <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800">J</kbd>
+                  <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800">L</kbd>
                 </div>
               </div>
-              <div className="flex items-center justify-between py-1">
-                <span className="text-zinc-400">Rate Video & Coherence</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">R</kbd>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">Rate Video</span>
+                <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-xs">R</kbd>
               </div>
-            </div>
-
-            <div className="pt-2 text-center">
-              <button
-                onClick={() => setShowShortcutsModal(false)}
-                className="w-full py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-colors"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>

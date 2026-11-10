@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { store } from '@/lib/store';
-import { Check, ArrowRight, Download, Trash2, Shield, Plus, X, GraduationCap, Compass, BookOpen, Layers, Tag, Laptop } from 'lucide-react';
+import { Check, Plus, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { UsageQuotaCard } from '@/components/profile/UsageQuotaCard';
 
@@ -18,7 +18,7 @@ const EDUCATION_LEVEL_OPTIONS = [
   { id: 'Postgraduate', label: 'Postgraduate & Research' },
   { id: 'Professional', label: 'Working Professional' },
   { id: 'Competitive Exams', label: 'Competitive Examination Prep' },
-  { id: 'General Knowledge', label: 'General Knowledge & Lifelong' }
+  { id: 'General Knowledge', label: 'General Knowledge' }
 ];
 
 const STREAM_OPTIONS = [
@@ -37,16 +37,14 @@ function ProfileForm() {
   const searchParams = useSearchParams();
   const isFirstSetup = searchParams.get('setup') === 'true';
 
-  const { user, isAuthenticated, updateProfile } = useAuth();
+  const { user, updateProfile } = useAuth();
   const allSubjects = store.getSubjects();
   const allTopics = store.getTopics();
 
-  // Basic Details
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [learningGoal, setLearningGoal] = useState('');
 
-  // Multi-Dimensional Dimensions
   const [educationLevel, setEducationLevel] = useState('not_specified');
   const [stream, setStream] = useState('none');
   const [followedSubjectIds, setFollowedSubjectIds] = useState<string[]>([]);
@@ -55,19 +53,16 @@ function ProfileForm() {
   const [newTagInput, setNewTagInput] = useState('');
   const [workspaceMode, setWorkspaceMode] = useState<'auto' | 'notes' | 'math' | 'code' | 'concepts' | 'timeline'>('auto');
 
-  // Study Settings
   const [preferredLanguage, setPreferredLanguage] = useState<'javascript' | 'typescript' | 'python'>('javascript');
   const [dailyGoalMinutes, setDailyGoalMinutes] = useState(30);
   const [strictFocusMode, setStrictFocusMode] = useState(true);
 
-  // Status & Notifications
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
 
-  // Topic filter in UI
   const [topicFilterSubject, setTopicFilterSubject] = useState<string>('all');
 
   useEffect(() => {
@@ -88,15 +83,13 @@ function ProfileForm() {
   }, [user]);
 
   const toggleSubject = (id: string) => {
-    setFollowedSubjectIds(prev => {
-      const exists = prev.includes(id);
-      const next = exists ? prev.filter(s => s !== id) : [...prev, id];
-      return next;
-    });
+    setFollowedSubjectIds(prev =>
+      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+    );
   };
 
   const toggleTopic = (id: string) => {
-    setFollowedTopicIds(prev => 
+    setFollowedTopicIds(prev =>
       prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
     );
   };
@@ -143,7 +136,7 @@ function ProfileForm() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm('Are you sure you want to request account erasure? All personal notes, preferences, and custom learning paths will be deleted in accordance with GDPR right-to-be-forgotten.')) {
+    if (!window.confirm('Are you sure you want to delete your account and erase all personal notes and preferences?')) {
       return;
     }
     setIsDeleting(true);
@@ -184,65 +177,48 @@ function ProfileForm() {
       if (isFirstSetup) {
         setTimeout(() => {
           router.push('/feed');
-        }, 1200);
+        }, 1000);
       }
     } catch {
-      // error handled in context
+      // handled in context
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 w-full space-y-8">
-      {/* Header */}
-      <div className="border-b border-zinc-800 pb-5 space-y-1">
-        {isFirstSetup && (
-          <span className="text-[11px] font-semibold text-blue-400 block mb-1">
-            Welcome to FineTube
-          </span>
-        )}
-        <h1 className="text-2xl font-bold text-white">Universal Learning Profile</h1>
-        <p className="text-xs text-zinc-400">
-          Configure your <strong>educational background</strong>, <strong>subjects</strong>, and <strong>specific learning interests</strong> to ensure your feed shows only relevant educational content.
-        </p>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 w-full space-y-8">
+      <div className="border-b border-zinc-800 pb-5">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Learning Profile</h1>
       </div>
 
       {isSavedNotice && (
-        <div className="p-3 rounded-md bg-emerald-950/40 border border-emerald-900/60 text-xs text-emerald-300 flex items-center justify-between">
-          <span>Learning profile updated successfully!</span>
-          <Link href="/feed" className="underline font-medium hover:text-white inline-flex items-center gap-1">
-            Go to Your Feed <ArrowRight className="w-3 h-3" />
+        <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-900/60 text-sm text-emerald-300 flex items-center justify-between">
+          <span>Profile updated.</span>
+          <Link href="/feed" className="underline font-semibold hover:text-white">
+            Open Feed →
           </Link>
         </div>
       )}
 
       {deleteSuccess && (
-        <div className="p-3 rounded-md bg-zinc-900 border border-zinc-800 text-xs text-zinc-400">
-          Account data purged. Redirecting to home...
+        <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-sm text-zinc-400">
+          Account data purged. Redirecting...
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Dimension 1 & 2: Education Level and Academic Stream */}
-        <div className="space-y-4 p-5 rounded-xl bg-zinc-900/40 border border-zinc-800">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="w-4 h-4 text-blue-400" />
-            <h2 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-              1. Education Level & Academic Focus (Optional)
-            </h2>
-          </div>
-          <p className="text-[11px] text-zinc-500">
-            Education level and learning interests are separate dimensions. You are never forced into a single track or proficiency tier.
-          </p>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Education Level & Stream */}
+        <div className="space-y-4 p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
+          <h2 className="text-base font-bold text-white">Education Background</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300 block">Education Level</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-300 block">Education Level</label>
               <select
                 value={educationLevel}
                 onChange={(e) => setEducationLevel(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600 transition-colors"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
               >
                 {EDUCATION_LEVEL_OPTIONS.map(opt => (
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
@@ -250,12 +226,12 @@ function ProfileForm() {
               </select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300 block">Academic Stream / Field</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-300 block">Academic Stream / Field</label>
               <select
                 value={stream}
                 onChange={(e) => setStream(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600 transition-colors"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
               >
                 {STREAM_OPTIONS.map(opt => (
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
@@ -265,19 +241,11 @@ function ProfileForm() {
           </div>
         </div>
 
-        {/* Dimension 3: Multi-Subject Selection */}
-        <div className="space-y-4 p-5 rounded-xl bg-zinc-900/40 border border-zinc-800">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-              2. Selected Subjects
-            </h2>
-          </div>
-          <p className="text-[11px] text-zinc-500">
-            Select one or multiple subjects. FineTube covers sciences, mathematics, humanities, medicine, economics, tech, and beyond.
-          </p>
+        {/* Subjects */}
+        <div className="space-y-4 p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
+          <h2 className="text-base font-bold text-white">Subjects</h2>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {allSubjects.map(sub => {
               const isSelected = followedSubjectIds.includes(sub.id);
               return (
@@ -285,17 +253,17 @@ function ProfileForm() {
                   type="button"
                   key={sub.id}
                   onClick={() => toggleSubject(sub.id)}
-                  className={`text-left p-3 rounded-lg border text-xs transition-colors flex items-center justify-between ${
+                  className={`text-left p-3.5 rounded-xl border text-sm transition-colors flex items-center justify-between ${
                     isSelected
                       ? 'bg-zinc-800 border-zinc-600 text-white'
                       : 'bg-zinc-900/40 border-zinc-800/80 text-zinc-400 hover:border-zinc-700'
                   }`}
                 >
                   <span className="font-medium truncate">{sub.name}</span>
-                  <div className={`w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 border ${
+                  <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
                     isSelected ? 'bg-white text-zinc-950 border-white' : 'border-zinc-700'
                   }`}>
-                    {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
                 </button>
               );
@@ -303,42 +271,31 @@ function ProfileForm() {
           </div>
         </div>
 
-        {/* Dimension 4: Specific Topics Explorer */}
-        <div className="space-y-4 p-5 rounded-xl bg-zinc-900/40 border border-zinc-800">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-amber-400" />
-              <h2 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                3. Specific Curriculum Topics
-              </h2>
-            </div>
-            <span className="text-[11px] text-zinc-500">
-              <strong>{followedTopicIds.length}</strong> topics followed
-            </span>
+        {/* Specific Topics */}
+        <div className="space-y-4 p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white">Topics</h2>
+            <span className="text-sm text-zinc-400">{followedTopicIds.length} selected</span>
           </div>
-          <p className="text-[11px] text-zinc-500">
-            Follow individual topics to focus your feed on specific chapters and domains:
-          </p>
 
-          {/* Subject Filter for Topics */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
             <button
               type="button"
               onClick={() => setTopicFilterSubject('all')}
-              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors shrink-0 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${
                 topicFilterSubject === 'all'
                   ? 'bg-zinc-100 text-zinc-950 font-semibold'
                   : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
               }`}
             >
-              {followedSubjectIds.length > 0 ? 'Selected Subjects' : 'All Topics'}
+              {followedSubjectIds.length > 0 ? 'Selected Subjects' : 'All'}
             </button>
             {allSubjects.map(sub => (
               <button
                 type="button"
                 key={sub.id}
                 onClick={() => setTopicFilterSubject(sub.id)}
-                className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors shrink-0 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${
                   topicFilterSubject === sub.id
                     ? 'bg-zinc-100 text-zinc-950 font-semibold'
                     : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
@@ -349,7 +306,7 @@ function ProfileForm() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
             {displayedTopics.map(topic => {
               const selected = followedTopicIds.includes(topic.id);
               return (
@@ -357,31 +314,17 @@ function ProfileForm() {
                   type="button"
                   key={topic.id}
                   onClick={() => toggleTopic(topic.id)}
-                  className={`text-left p-3 rounded-lg border text-xs transition-colors flex items-start justify-between gap-2 ${
+                  className={`text-left p-3.5 rounded-xl border text-sm transition-colors flex items-center justify-between gap-2 ${
                     selected
                       ? 'bg-zinc-800 border-zinc-600 text-white'
                       : 'bg-zinc-900/40 border-zinc-800/80 text-zinc-400 hover:border-zinc-700'
                   }`}
                 >
-                  <div className="space-y-1">
-                    <span className="font-medium block text-zinc-200">{topic.name}</span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {topic.educationLevel && (
-                        <span className="text-[10px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400 font-mono">
-                          {topic.educationLevel}
-                        </span>
-                      )}
-                      {topic.stream && (
-                        <span className="text-[10px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400 font-mono">
-                          {topic.stream}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className={`w-3.5 h-3.5 mt-0.5 rounded flex items-center justify-center shrink-0 border ${
+                  <span className="font-medium text-zinc-200 truncate">{topic.name}</span>
+                  <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
                     selected ? 'bg-white text-zinc-950 border-white' : 'border-zinc-700'
                   }`}>
-                    {selected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    {selected && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
                 </button>
               );
@@ -389,25 +332,17 @@ function ProfileForm() {
           </div>
         </div>
 
-        {/* Dimension 5: Custom Interests (Freeform Tags) */}
-        <div className="space-y-4 p-5 rounded-xl bg-zinc-900/40 border border-zinc-800">
-          <div className="flex items-center gap-2">
-            <Tag className="w-4 h-4 text-purple-400" />
-            <h2 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-              4. Custom Learning Interests
-            </h2>
-          </div>
-          <p className="text-[11px] text-zinc-500">
-            Add custom topics, exam titles, or specialized niches (e.g., <em>Organic Chemistry</em>, <em>Human Anatomy</em>, <em>French Revolution</em>, <em>React Hooks</em>):
-          </p>
+        {/* Custom Interests */}
+        <div className="space-y-4 p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
+          <h2 className="text-base font-bold text-white">Custom Interests</h2>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <input
               type="text"
               value={newTagInput}
               onChange={(e) => setNewTagInput(e.target.value)}
-              placeholder="Add custom interest tag..."
-              className="flex-1 bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
+              placeholder="e.g. Organic Chemistry, Anatomy, French Revolution..."
+              className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -418,18 +353,18 @@ function ProfileForm() {
             <button
               type="button"
               onClick={handleAddCustomInterest}
-              className="px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium transition-colors shrink-0 flex items-center gap-1"
+              className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium transition-colors shrink-0 inline-flex items-center gap-1.5"
             >
-              <Plus className="w-3.5 h-3.5" /> Add Tag
+              <Plus className="w-4 h-4" /> Add
             </button>
           </div>
 
           {customInterests.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap pt-1">
+            <div className="flex items-center gap-2 flex-wrap pt-1">
               {customInterests.map(tag => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-zinc-800 text-zinc-200 border border-zinc-700"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-zinc-800 text-zinc-200 border border-zinc-700"
                 >
                   {tag}
                   <button
@@ -437,7 +372,7 @@ function ProfileForm() {
                     onClick={() => handleRemoveCustomInterest(tag)}
                     className="text-zinc-400 hover:text-white"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </span>
               ))}
@@ -445,37 +380,32 @@ function ProfileForm() {
           )}
         </div>
 
-        {/* Dimension 6: Learning Workspace Mode & Study Target */}
-        <div className="space-y-4 p-5 rounded-xl bg-zinc-900/40 border border-zinc-800">
-          <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4 text-sky-400" />
-            <h2 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-              5. Workspace Adaptation & Goals
-            </h2>
-          </div>
+        {/* Workspace Mode & Account Info */}
+        <div className="space-y-4 p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
+          <h2 className="text-base font-bold text-white">Workspace & Preferences</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300 block">Workspace Tools Mode</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-300 block">Default Workspace Tool</label>
               <select
                 value={workspaceMode}
                 onChange={(e) => setWorkspaceMode(e.target.value as any)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
               >
-                <option value="auto">Auto-Detect (Adapts to lecture subject)</option>
-                <option value="concepts">Concept Organizer &amp; Flashcards (Medicine / Humanities)</option>
-                <option value="math">Mathematics &amp; Formula Scratchpad</option>
-                <option value="code">Developer Code Sandbox</option>
-                <option value="notes">Standard Personal Notes</option>
+                <option value="auto">Auto-Detect by Subject</option>
+                <option value="concepts">Concept Cards (Medicine / Humanities)</option>
+                <option value="math">Formula Scratchpad (Math / Science)</option>
+                <option value="code">Code Sandbox (Programming)</option>
+                <option value="notes">Personal Notes</option>
               </select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300 block">Daily Study Target</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-300 block">Daily Goal</label>
               <select
                 value={dailyGoalMinutes}
                 onChange={(e) => setDailyGoalMinutes(Number(e.target.value))}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
               >
                 <option value={15}>15 minutes / day</option>
                 <option value={30}>30 minutes / day</option>
@@ -484,122 +414,74 @@ function ProfileForm() {
                 <option value={120}>2 hours / day</option>
               </select>
             </div>
-          </div>
 
-          {/* Optional Developer Language (only if user studies coding) */}
-          <div className="pt-2 border-t border-zinc-800/60">
-            <label className="text-[11px] font-medium text-zinc-400 block mb-1">
-              Optional: Default Sandbox Language (for Software & Computer Science)
-            </label>
-            <select
-              value={preferredLanguage}
-              onChange={(e) => setPreferredLanguage(e.target.value as any)}
-              className="w-full sm:w-1/2 bg-zinc-900 border border-zinc-800 rounded-md px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-zinc-600"
-            >
-              <option value="javascript">JavaScript</option>
-              <option value="typescript">TypeScript</option>
-              <option value="python">Python</option>
-            </select>
-          </div>
-        </div>
-
-        {/* General Learner Details */}
-        <div className="space-y-4 p-5 rounded-xl bg-zinc-900/40 border border-zinc-800">
-          <h2 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-            6. Learner Profile Details
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300 block">Display Name</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-300 block">Display Name</label>
               <input
                 type="text"
                 required
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300 block">Primary Learning Objective</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-300 block">Learning Goal</label>
               <input
                 type="text"
                 value={learningGoal}
                 onChange={(e) => setLearningGoal(e.target.value)}
-                placeholder="e.g. Master Class 12 Physics & Organic Chemistry"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+                placeholder="e.g. Class 12 Boards"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
               />
             </div>
           </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-300 block">Bio / Notes</label>
-            <textarea
-              rows={2}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="What are you currently preparing or curious about?"
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-md p-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 resize-none"
-            />
-          </div>
         </div>
 
-        {/* Submit Actions */}
+        {/* Save Button */}
         <div className="flex items-center justify-between pt-2">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold transition-colors disabled:opacity-50"
+            className="px-7 py-3 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-sm font-bold transition-colors disabled:opacity-50"
           >
-            {isSubmitting ? 'Saving Profile...' : isFirstSetup ? 'Complete Setup & Open Feed' : 'Save Learning Profile'}
+            {isSubmitting ? 'Saving...' : 'Save Profile'}
           </button>
 
           <Link
             href="/settings/interests"
-            className="text-xs text-zinc-400 hover:text-white underline transition-colors"
+            className="text-sm text-zinc-400 hover:text-white underline transition-colors"
           >
-            Manage Feed Recommendation Filters →
+            Manage Feed Filters →
           </Link>
         </div>
       </form>
 
-      {/* Usage Quota Card */}
       <div className="pt-8 border-t border-zinc-800/80">
         <UsageQuotaCard />
       </div>
 
-      {/* Account Erasure & Data Portability */}
+      {/* Privacy & Data */}
       <div className="pt-8 border-t border-zinc-800/80 space-y-4">
-        <div>
-          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Shield className="w-3.5 h-3.5 text-zinc-500" />
-            GDPR Data Portability & Privacy
-          </h2>
-          <p className="text-[11px] text-zinc-500 mt-0.5">
-            You own your educational data. Export your notes and learning pathways at any time.
-          </p>
-        </div>
-
+        <h2 className="text-base font-bold text-zinc-300">Data & Privacy</h2>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             type="button"
             onClick={handleExportData}
             disabled={isExporting}
-            className="px-3.5 py-2 rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs text-zinc-200 inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+            className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-sm text-zinc-200 transition-colors disabled:opacity-50"
           >
-            <Download className="w-3.5 h-3.5" />
-            {isExporting ? 'Exporting...' : 'Export Complete Learner Data (JSON)'}
+            {isExporting ? 'Exporting...' : 'Export Data (JSON)'}
           </button>
 
           <button
             type="button"
             onClick={handleDeleteAccount}
             disabled={isDeleting}
-            className="px-3.5 py-2 rounded-md bg-rose-950/20 border border-rose-900/40 hover:bg-rose-950/40 text-xs text-rose-300 inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+            className="px-4 py-2.5 rounded-xl bg-rose-950/20 border border-rose-900/40 hover:bg-rose-950/40 text-sm text-rose-300 transition-colors disabled:opacity-50"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            {isDeleting ? 'Erasing...' : 'Delete Account & Erase All Data'}
+            {isDeleting ? 'Deleting...' : 'Delete Account'}
           </button>
         </div>
       </div>
@@ -609,7 +491,7 @@ function ProfileForm() {
 
 export default function ProfilePage() {
   return (
-    <Suspense fallback={<div className="p-8 text-xs text-zinc-500">Loading learning profile...</div>}>
+    <Suspense fallback={<div className="p-10 text-sm text-zinc-500">Loading profile...</div>}>
       <ProfileForm />
     </Suspense>
   );
