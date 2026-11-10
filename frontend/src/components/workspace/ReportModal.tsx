@@ -88,12 +88,13 @@ export function ReportModal({ isOpen, onClose, targetType, targetId, targetTitle
                 onChange={e => setReason(e.target.value)}
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-600"
               >
-                <option value="inaccurate_content">Inaccurate Concept or Code Explanation</option>
-                <option value="outdated">Outdated Syntax or Deprecated APIs</option>
+                <option value="incorrect_categorization">Incorrect Subject or Topic Categorization</option>
+                <option value="inaccurate_content">Factually Inaccurate or Misleading Explanation</option>
+                <option value="wrong_education_level">Inappropriate Educational Level</option>
+                <option value="outdated">Outdated Curriculum or Deprecated Material</option>
                 <option value="misaligned_timestamps">Misaligned Timestamps or Chapters</option>
-                <option value="misleading_tags">Misleading Topic Classification</option>
-                <option value="spam">Spam, Policy or Copyright Violation</option>
-                <option value="other">Other Concern</option>
+                <option value="spam">Distracting, Spam or Policy Violation</option>
+                <option value="other">Other Educational Quality Issue</option>
               </select>
             </div>
 

@@ -1,3 +1,5 @@
+import { taxonomyRegistry, UNIVERSAL_SUBJECTS, UNIVERSAL_TOPICS } from './taxonomyService.js';
+
 export interface Citation {
   timestampSeconds: number;
   segmentId?: string;
@@ -39,6 +41,164 @@ export function sanitizeUntrustedText(text: string): string {
     .replace(/[<>]/g, '') // Strip markup delimiters
     .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Strip control characters
     .trim();
+}
+
+export interface VideoClassificationResult {
+  mainSubject: { id: string; name: string };
+  primaryTopic: { id: string; name: string; slug: string };
+  subtopic?: string;
+  secondaryTopics: Array<{ id: string; name: string; confidence: number }>;
+  relatedConcepts: string[];
+  confidenceScore: number; // 0.00 to 1.00
+  needsHumanReview: boolean;
+  evidenceReason: string;
+}
+
+/**
+ * Blueprint Section 6: AI-Based Video Classification Engine
+ * Analyzes video title, description, and concepts to map videos into
+ * FineTube's universal subject and topic taxonomy.
+ * Generates confidence scores, multi-topic relationships, and flags low-confidence
+ * content for admin review rather than relying on YouTube categories.
+ */
+export function classifyVideoMetadata(metadata: {
+  title: string;
+  description?: string;
+  tags?: string[];
+  channelTitle?: string;
+}): VideoClassificationResult {
+  const cleanTitle = (metadata.title || '').toLowerCase().trim();
+  const cleanDesc = (metadata.description || '').toLowerCase().trim();
+  const tags = (metadata.tags || []).map(t => t.toLowerCase().trim());
+  const allTopics = taxonomyRegistry.getAllTopics();
+
+  interface ScoredTopic {
+    topic: typeof allTopics[0];
+    score: number;
+    matchedSubtopic?: string;
+    matchedConcepts: string[];
+  }
+
+  const scored: ScoredTopic[] = [];
+
+  for (const topic of allTopics) {
+    let score = 0;
+    let matchedSubtopic: string | undefined = undefined;
+    const matchedConcepts: string[] = [];
+
+    // 1. Direct Topic Name match
+    const topicNameLower = topic.name.toLowerCase();
+    if (cleanTitle.includes(topicNameLower)) {
+      score += 35;
+    } else {
+      // Word overlap
+      const words = topicNameLower.split(/[\s,&-]+/).filter(w => w.length > 3);
+      const matchCount = words.filter(w => cleanTitle.includes(w)).length;
+      if (matchCount > 0) {
+        score += matchCount * 8;
+      }
+    }
+
+    // 2. Aliases match
+    for (const alias of topic.aliases || []) {
+      const aLower = alias.toLowerCase();
+      if (cleanTitle.includes(aLower)) {
+        score += 25;
+      } else if (cleanDesc.includes(aLower)) {
+        score += 8;
+      }
+      if (tags.includes(aLower)) {
+        score += 12;
+      }
+    }
+
+    // 3. Domain match
+    if (topic.domain && cleanTitle.includes(topic.domain.toLowerCase())) {
+      score += 15;
+    }
+
+    // 4. Subtopics match
+    for (const sub of topic.subtopics || []) {
+      const sLower = sub.toLowerCase();
+      if (cleanTitle.includes(sLower) || cleanDesc.includes(sLower)) {
+        score += 15;
+        if (!matchedSubtopic) matchedSubtopic = sub;
+      }
+    }
+
+    // 5. Concept Checklist match
+    for (const concept of topic.conceptChecklist || []) {
+      const cLower = concept.toLowerCase();
+      if (cleanTitle.includes(cLower) || cleanDesc.includes(cLower)) {
+        score += 10;
+        if (!matchedConcepts.includes(concept)) {
+          matchedConcepts.push(concept);
+        }
+      }
+    }
+
+    // 6. Education level or stream match in title/description
+    if (topic.educationLevel && cleanTitle.includes(topic.educationLevel.toLowerCase())) {
+      score += 10;
+    }
+    if (topic.stream && cleanTitle.includes(topic.stream.toLowerCase())) {
+      score += 8;
+    }
+
+    if (score > 0) {
+      scored.push({ topic, score, matchedSubtopic, matchedConcepts });
+    }
+  }
+
+  // Sort descending by match score
+  scored.sort((a, b) => b.score - a.score);
+
+  // If no match at all, assign default general subject with low confidence
+  if (scored.length === 0 || scored[0].score < 10) {
+    const generalSubject = taxonomyRegistry.getSubjectById('general_knowledge') || { id: 'general_knowledge', name: 'General Knowledge' };
+    return {
+      mainSubject: { id: generalSubject.id, name: generalSubject.name },
+      primaryTopic: { id: 'general_knowledge', name: 'General Educational Discovery', slug: 'general-knowledge' },
+      secondaryTopics: [],
+      relatedConcepts: [],
+      confidenceScore: 0.45,
+      needsHumanReview: true,
+      evidenceReason: 'Insufficient specific curriculum keyword matches in title or description; queued for human review'
+    };
+  }
+
+  const best = scored[0];
+  const maxScore = best.score;
+
+  // Normalized confidence calculation (bounded 0.40 to 0.99)
+  // A score >= 40 indicates very high confidence (e.g. title matches topic name + aliases)
+  const confidenceScore = Math.min(0.99, Number((0.55 + Math.min(maxScore, 50) * 0.009).toFixed(2)));
+  const needsHumanReview = confidenceScore < 0.75;
+
+  const mainSub = taxonomyRegistry.getSubjectById(best.topic.subjectId) || { id: best.topic.subjectId, name: best.topic.subjectId };
+
+  // Collect secondary topics (score >= 12 and different from primary)
+  const secondaryTopics = scored
+    .slice(1, 4)
+    .filter(s => s.score >= 12 && s.topic.id !== best.topic.id)
+    .map(s => ({
+      id: s.topic.id,
+      name: s.topic.name,
+      confidence: Number((s.score / maxScore * 0.85).toFixed(2))
+    }));
+
+  return {
+    mainSubject: { id: mainSub.id, name: mainSub.name },
+    primaryTopic: { id: best.topic.id, name: best.topic.name, slug: best.topic.slug },
+    subtopic: best.matchedSubtopic || (best.topic.subtopics && best.topic.subtopics[0]) || undefined,
+    secondaryTopics,
+    relatedConcepts: best.matchedConcepts.length > 0 ? best.matchedConcepts : (best.topic.conceptChecklist || []).slice(0, 3),
+    confidenceScore,
+    needsHumanReview,
+    evidenceReason: needsHumanReview
+      ? `Moderate keyword match score (${maxScore}). Requires admin or community verification to confirm curriculum taxonomy accuracy.`
+      : `High confidence match score (${maxScore}) against curriculum topics, aliases, and concept checklist.`
+  };
 }
 
 export interface IngestionJob {
