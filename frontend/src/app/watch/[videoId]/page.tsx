@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
-import { Star, Bookmark, Check, Keyboard, X, Flag } from 'lucide-react';
+import { Star, Bookmark, Check, Keyboard, X, Flag, Calculator, BookOpen, Code2, ChevronDown } from 'lucide-react';
 import { store } from '@/lib/store';
 import { VideoPlayer, VideoPlayerRef } from '@/components/workspace/VideoPlayer';
 import { PersonalNotesPanel } from '@/components/workspace/PersonalNotesPanel';
 import { AiNotesPanel } from '@/components/workspace/AiNotesPanel';
 import { AskAiPanel } from '@/components/workspace/AskAiPanel';
 import { CodeEditorSandbox } from '@/components/workspace/CodeEditorSandbox';
+import { FormulaScratchpad } from '@/components/workspace/FormulaScratchpad';
+import { ConceptOrganizer } from '@/components/workspace/ConceptOrganizer';
 import { QuizPanel } from '@/components/workspace/QuizPanel';
 import { RatingModal } from '@/components/workspace/RatingModal';
 import { ReportModal } from '@/components/workspace/ReportModal';
@@ -17,17 +19,73 @@ import { formatTimestamp } from '@/lib/utils';
 import { calculateBayesianRating } from '@/lib/ranking';
 import { analytics } from '@/lib/analytics';
 
+type AdaptiveToolMode = 'math' | 'concepts' | 'code';
+
 export default function WatchPage() {
   const params = useParams();
   const videoId = params?.videoId as string;
   const playerRef = useRef<VideoPlayerRef>(null);
 
-  const [activeTab, setActiveTab] = useState<'notes' | 'code' | 'quiz' | 'ai_notes' | 'ask_ai' | 'chapters'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'adaptive' | 'quiz' | 'ai_notes' | 'ask_ai' | 'chapters'>('notes');
   const [currentTime, setCurrentTime] = useState(0);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+
+  const video = store.getVideoById(videoId);
+  const topic = video ? store.getTopics().find(t => t.id === video.primaryTopicId) : undefined;
+
+  // Determine initial adaptive tool mode based on user profile or subject
+  const initialAdaptiveMode: AdaptiveToolMode = useMemo(() => {
+    const user = store.getCurrentUser() || store.user;
+    if (user?.workspaceMode && user.workspaceMode !== 'auto') {
+      if (user.workspaceMode === 'math') return 'math';
+      if (user.workspaceMode === 'code') return 'code';
+      if (user.workspaceMode === 'concepts') return 'concepts';
+    }
+
+    if (!video) return 'concepts';
+    const tId = (video.primaryTopicId || '').toLowerCase();
+    const domain = (topic?.domain || '').toLowerCase();
+    const subjectId = (topic?.subjectId || '').toLowerCase();
+
+    // STEM Math, Physics, Chemistry
+    if (
+      tId.includes('physics') ||
+      tId.includes('math') ||
+      tId.includes('chem') ||
+      subjectId === 'physics' ||
+      subjectId === 'mathematics' ||
+      subjectId === 'chemistry' ||
+      domain === 'stem'
+    ) {
+      return 'math';
+    }
+
+    // CS & Programming
+    if (
+      tId.includes('react') ||
+      tId.includes('dsa') ||
+      tId.includes('tree') ||
+      tId.includes('system_design') ||
+      tId.includes('javascript') ||
+      subjectId === 'computer_science' ||
+      subjectId === 'programming' ||
+      domain === 'tech'
+    ) {
+      return 'code';
+    }
+
+    // Default for Medicine, Humanities, History, Law, Economics, General
+    return 'concepts';
+  }, [video, topic]);
+
+  const [adaptiveToolMode, setAdaptiveToolMode] = useState<AdaptiveToolMode>(initialAdaptiveMode);
+
+  useEffect(() => {
+    setAdaptiveToolMode(initialAdaptiveMode);
+  }, [initialAdaptiveMode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -41,7 +99,7 @@ export default function WatchPage() {
       } else if (e.key === '1') {
         setActiveTab('notes');
       } else if (e.key === '2') {
-        setActiveTab('code');
+        setActiveTab('adaptive');
       } else if (e.key === '3') {
         setActiveTab('quiz');
       } else if (e.key === '4') {
@@ -69,7 +127,6 @@ export default function WatchPage() {
     }
   }, [videoId]);
 
-  const video = store.getVideoById(videoId);
   if (!video) {
     return (
       <div className="max-w-4xl mx-auto py-16 px-4 text-center space-y-3">
@@ -81,7 +138,6 @@ export default function WatchPage() {
     );
   }
 
-  const topic = store.getTopics().find(t => t.id === video.primaryTopicId);
   const bayesianRating = calculateBayesianRating(video.ratingAverage, video.ratingCount);
 
   const handleSeek = (seconds: number) => {
@@ -170,11 +226,11 @@ export default function WatchPage() {
 
         {/* Right: Workspace Tools (5 cols) */}
         <div className="lg:col-span-5 flex flex-col h-[560px] sm:h-[650px] border border-zinc-800/80 rounded-lg overflow-hidden bg-zinc-950">
-          {/* Mobile-responsive Tabs Bar (Blueprint §8.1 & §9.1) */}
+          {/* Mobile-responsive Tabs Bar with Subject-Adaptive Tool */}
           <div className="flex items-center border-b border-zinc-800/80 bg-zinc-900/50 overflow-x-auto scrollbar-none shrink-0">
             <button
               onClick={() => setActiveTab('notes')}
-              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
+              className={`min-w-[58px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'notes'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -182,19 +238,27 @@ export default function WatchPage() {
             >
               Notes
             </button>
+
+            {/* Adaptive Tool Tab (Formulas | Concepts | Code) */}
             <button
-              onClick={() => setActiveTab('code')}
-              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
-                activeTab === 'code'
-                  ? 'border-white text-white font-semibold'
+              onClick={() => setActiveTab('adaptive')}
+              className={`min-w-[76px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center inline-flex items-center justify-center gap-1 ${
+                activeTab === 'adaptive'
+                  ? 'border-blue-400 text-blue-400 font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              Code
+              {adaptiveToolMode === 'math' && <Calculator className="w-3 h-3 text-blue-400" />}
+              {adaptiveToolMode === 'concepts' && <BookOpen className="w-3 h-3 text-emerald-400" />}
+              {adaptiveToolMode === 'code' && <Code2 className="w-3 h-3 text-amber-400" />}
+              <span>
+                {adaptiveToolMode === 'math' ? 'Formulas' : adaptiveToolMode === 'concepts' ? 'Concepts' : 'Code'}
+              </span>
             </button>
+
             <button
               onClick={() => setActiveTab('quiz')}
-              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
+              className={`min-w-[58px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'quiz'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -214,7 +278,7 @@ export default function WatchPage() {
             </button>
             <button
               onClick={() => setActiveTab('ask_ai')}
-              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
+              className={`min-w-[58px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'ask_ai'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -224,7 +288,7 @@ export default function WatchPage() {
             </button>
             <button
               onClick={() => setActiveTab('chapters')}
-              className={`min-w-[64px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
+              className={`min-w-[62px] sm:flex-1 py-2.5 px-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'chapters'
                   ? 'border-white text-white font-semibold'
                   : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -233,6 +297,50 @@ export default function WatchPage() {
               Chapters
             </button>
           </div>
+
+          {/* Sub-header tool switcher for Adaptive Tool */}
+          {activeTab === 'adaptive' && (
+            <div className="px-3 py-1.5 bg-zinc-900/90 border-b border-zinc-800/80 flex items-center justify-between text-[11px]">
+              <span className="text-zinc-400">
+                Workspace Tool: <strong className="text-zinc-200 capitalize">{adaptiveToolMode}</strong>
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setAdaptiveToolMode('math')}
+                  className={`px-2 py-0.5 rounded transition-colors ${
+                    adaptiveToolMode === 'math'
+                      ? 'bg-blue-600/30 text-blue-300 font-semibold border border-blue-500/40'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                  title="Formula & Equation Scratchpad (Math, Physics, Chemistry)"
+                >
+                  Formulas
+                </button>
+                <button
+                  onClick={() => setAdaptiveToolMode('concepts')}
+                  className={`px-2 py-0.5 rounded transition-colors ${
+                    adaptiveToolMode === 'concepts'
+                      ? 'bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                  title="Structured Concept & Terminology Flashcards (Medicine, Humanities, Biology)"
+                >
+                  Concepts
+                </button>
+                <button
+                  onClick={() => setAdaptiveToolMode('code')}
+                  className={`px-2 py-0.5 rounded transition-colors ${
+                    adaptiveToolMode === 'code'
+                      ? 'bg-amber-600/30 text-amber-300 font-semibold border border-amber-500/40'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                  title="Code Sandbox & Invariant Editor (Computer Science, Programming)"
+                >
+                  Code
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Panel Content */}
           <div className="flex-1 overflow-hidden p-4">
@@ -245,10 +353,25 @@ export default function WatchPage() {
               />
             )}
 
-            {activeTab === 'code' && (
+            {activeTab === 'adaptive' && adaptiveToolMode === 'code' && (
               <CodeEditorSandbox
                 videoId={video.id}
                 topicId={video.primaryTopicId}
+              />
+            )}
+
+            {activeTab === 'adaptive' && adaptiveToolMode === 'math' && (
+              <FormulaScratchpad
+                videoId={video.id}
+                topicId={video.primaryTopicId}
+              />
+            )}
+
+            {activeTab === 'adaptive' && adaptiveToolMode === 'concepts' && (
+              <ConceptOrganizer
+                video={video}
+                currentTime={currentTime}
+                onSeek={handleSeek}
               />
             )}
 
@@ -304,7 +427,7 @@ export default function WatchPage() {
         </button>
 
         <span className="text-[11px] text-zinc-600 font-mono">
-          FineTube Focused Workspace v1.0
+          FineTube Adaptive Universal Workspace v2.0
         </span>
       </div>
 
@@ -345,7 +468,7 @@ export default function WatchPage() {
                 <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">1</kbd>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
-                <span className="text-zinc-400">Switch to Code Sandbox</span>
+                <span className="text-zinc-400">Switch to Adaptive Tool (Formulas / Concepts / Code)</span>
                 <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">2</kbd>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
@@ -359,6 +482,10 @@ export default function WatchPage() {
               <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
                 <span className="text-zinc-400">Switch to Ask AI</span>
                 <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">5</kbd>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
+                <span className="text-zinc-400">Switch to Chapters</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-[10px]">6</kbd>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-zinc-800/50">
                 <span className="text-zinc-400">Seek Backward / Forward 10s</span>

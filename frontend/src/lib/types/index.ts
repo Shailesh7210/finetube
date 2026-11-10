@@ -210,7 +210,7 @@ export interface UserProfile {
   followedTopicIds: string[];
   mutedTopicIds: string[];
   customInterests?: string[];
-  workspaceMode?: 'auto' | 'notes' | 'math' | 'code';
+  workspaceMode?: 'auto' | 'notes' | 'math' | 'code' | 'concepts' | 'timeline';
   preferredLanguage?: 'javascript' | 'typescript' | 'python';
   dailyGoalMinutes?: number;
   strictFocusMode?: boolean;

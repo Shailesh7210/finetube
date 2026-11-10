@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Download } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Download, Check, Sparkles } from 'lucide-react';
 import { Video } from '@/lib/types';
 import { formatTimestamp, downloadMarkdownFile } from '@/lib/utils';
 import { store } from '@/lib/store';
@@ -11,25 +11,97 @@ interface AiNotesPanelProps {
   onSeek: (seconds: number) => void;
 }
 
+interface SummarySection {
+  id: number;
+  title: string;
+  text: string;
+  timestamp: number;
+  code?: string;
+}
+
 export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
   const [copied, setCopied] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const sections = [
-    {
-      id: 1,
-      title: 'Core Concept',
-      text: `Key focus: ${video.topicCoverage.map(c => c.conceptName).join(', ')}. Explains state synchronization and lifecycle timing without unneeded re-renders.`,
-      timestamp: video.chapters[0]?.start || 0
-    },
-    {
-      id: 2,
-      title: 'Implementation & Cleanup',
-      text: 'Effects run after render. If setting up subscriptions or timers, return a cleanup function to prevent memory leaks and duplicate listeners.',
-      timestamp: video.chapters[1]?.start || 120,
-      code: `useEffect(() => {\n  const handler = () => console.log("Event");\n  window.addEventListener("resize", handler);\n  return () => window.removeEventListener("resize", handler);\n}, []);`
+  const sections: SummarySection[] = useMemo(() => {
+    const concepts = video.topicCoverage?.map(c => c.conceptName).join(', ') || video.title;
+    const tId = (video.primaryTopicId || '').toLowerCase();
+
+    if (tId.includes('physics') || tId.includes('math') || tId.includes('chem')) {
+      return [
+        {
+          id: 1,
+          title: 'Foundational Principles & Definitions',
+          text: `Core focus: ${concepts}. Establishes fundamental laws, conservation invariants, and boundary conditions used throughout the derivation.`,
+          timestamp: video.chapters[0]?.start || 0
+        },
+        {
+          id: 2,
+          title: 'Mathematical Formulation & Governing Equations',
+          text: 'Translates physical observations into quantitative symbolic relationships. Pay attention to dimensional consistency and unit conversions.',
+          timestamp: video.chapters[1]?.start || 120,
+          code: tId.includes('physics')
+            ? `Φ_E = ∮ E⃗ · dA⃗ = Q_enc / ε₀\n// Symmetry cases: Spherical (4πr²), Cylindrical (2πrL)`
+            : tId.includes('chem')
+            ? `Nucleophile (δ⁻) ──► Electrophile (δ⁺)\n// Carbocation Stability: 3° > 2° > 1° > Methyl`
+            : `f'(x) = lim(h→0) [f(x+h) - f(x)] / h\n// Fundamental Theorem of Calculus: ∫ₐᵇ f(t) dt = F(b) - F(a)`
+        }
+      ];
     }
-  ];
+
+    if (tId.includes('med') || tId.includes('bio') || tId.includes('anat')) {
+      return [
+        {
+          id: 1,
+          title: 'Anatomical & Physiological Mechanisms',
+          text: `Key focus: ${concepts}. Details structural organization, cellular signaling pathways, and homeostatic regulatory loops.`,
+          timestamp: video.chapters[0]?.start || 0
+        },
+        {
+          id: 2,
+          title: 'Clinical Correlations & Diagnostic Pathways',
+          text: 'Connects underlying physiological mechanisms to clinical presentation, compensatory reflexes, and pharmacological targets.',
+          timestamp: video.chapters[1]?.start || 120
+        }
+      ];
+    }
+
+    if (tId.includes('hist') || tId.includes('econ') || tId.includes('law') || tId.includes('psych')) {
+      return [
+        {
+          id: 1,
+          title: 'Historical Context & Primary Forces',
+          text: `Key focus: ${concepts}. Examines structural causes, institutional tensions, and primary analytical frameworks.`,
+          timestamp: video.chapters[0]?.start || 0
+        },
+        {
+          id: 2,
+          title: 'Critical Turning Points & Legacy',
+          text: 'Traces cause-and-effect milestones, competing interpretations, and long-term socio-political or legal implications.',
+          timestamp: video.chapters[1]?.start || 120
+        }
+      ];
+    }
+
+    // CS / Programming default
+    return [
+      {
+        id: 1,
+        title: 'Core Architecture & Invariants',
+        text: `Key focus: ${concepts}. Explains state synchronization, invariant maintenance, and operational edge cases.`,
+        timestamp: video.chapters[0]?.start || 0
+      },
+      {
+        id: 2,
+        title: 'Implementation & Resource Lifecycle',
+        text: 'Demonstrates structured implementation patterns, complexity trade-offs, and resource cleanup guarantees.',
+        timestamp: video.chapters[1]?.start || 120,
+        code: tId.includes('react')
+          ? `useEffect(() => {\n  const handler = () => console.log("Synced");\n  window.addEventListener("resize", handler);\n  return () => window.removeEventListener("resize", handler);\n}, []);`
+          : `// Core algorithmic invariant step\nfunction process(node) {\n  if (!node) return null;\n  return node.value;\n}`
+      }
+    ];
+  }, [video]);
 
   const handleCopy = (code: string, id: number) => {
     navigator.clipboard.writeText(code);
@@ -52,10 +124,10 @@ export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
           timestampSeconds: s.timestamp
         }))
       },
-      tags: ['ai-summary']
+      tags: ['ai-summary', video.primaryTopicId]
     });
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   const handleExportMarkdown = () => {
@@ -67,7 +139,7 @@ export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
       ...sections.map(s => [
         `### ${s.title} [${formatTimestamp(s.timestamp)}]`,
         `${s.text}`,
-        s.code ? `\n\`\`\`javascript\n${s.code}\n\`\`\`\n` : ''
+        s.code ? `\n\`\`\`\n${s.code}\n\`\`\`\n` : ''
       ].join('\n'))
     ].join('\n');
 
@@ -75,9 +147,12 @@ export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      <div className="flex items-center justify-between text-xs pb-1 border-b border-zinc-800/80">
-        <span className="text-zinc-400 font-semibold">Structured Summary</span>
+    <div className="flex flex-col h-full space-y-3">
+      <div className="flex items-center justify-between text-xs pb-1.5 border-b border-zinc-800/80">
+        <div className="flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+          <span className="text-zinc-300 font-semibold">AI Structured Summary</span>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportMarkdown}
@@ -90,12 +165,17 @@ export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
           <button
             onClick={handleSave}
             disabled={saved}
-            className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 hover:text-white transition-colors"
+            className="px-2.5 py-1 rounded bg-blue-600/20 border border-blue-500/40 text-xs text-blue-400 hover:bg-blue-600/30 font-medium transition-colors inline-flex items-center gap-1 disabled:opacity-60"
           >
-            {saved ? 'Saved to Library' : 'Save to Library'}
+            {saved && <Check className="w-3 h-3 text-emerald-400" />}
+            <span>{saved ? 'Saved to Library' : 'Save to Library'}</span>
           </button>
         </div>
       </div>
+
+      <p className="text-[11px] text-zinc-500 bg-zinc-900/40 px-2.5 py-1.5 rounded border border-zinc-800/60">
+        Draft notes are scoped to this session. Click <strong>Save to Library</strong> above if you want to permanently store them.
+      </p>
 
       <div className="flex-1 overflow-y-auto space-y-3 pr-1">
         {sections.map((sec) => (

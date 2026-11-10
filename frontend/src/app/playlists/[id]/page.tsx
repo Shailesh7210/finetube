@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, MoveUp, MoveDown, Copy, Check, Star, AlertCircle } from 'lucide-react';
+import { ArrowLeft, MoveUp, MoveDown, Copy, Check, Star, AlertCircle, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { store } from '@/lib/store';
 import { formatDuration } from '@/lib/utils';
 import { PlaylistRatingModal } from '@/components/workspace/PlaylistRatingModal';
+import { Video } from '@/lib/types';
 
 export default function PlaylistDetailPage() {
   const params = useParams();
@@ -16,7 +17,10 @@ export default function PlaylistDetailPage() {
 
   const [playlist, setPlaylist] = useState<any>(null);
   const [topic, setTopic] = useState<any>(null);
+  const [subject, setSubject] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
+  const [availableVideos, setAvailableVideos] = useState<Video[]>([]);
+  const [selectedAddVideoId, setSelectedAddVideoId] = useState('');
   const [isForkedNotice, setIsForkedNotice] = useState(false);
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
 
@@ -26,13 +30,42 @@ export default function PlaylistDetailPage() {
       if (pl) {
         setPlaylist(pl);
         setItems(pl.items || []);
-        const topics = await api.getTopics();
+        const [topics, subjects, feedVideos] = await Promise.all([
+          api.getTopics(),
+          api.getSubjects(),
+          api.getFeed()
+        ]);
         const t = topics.find(tp => tp.id === pl.topicId);
         setTopic(t);
+        if (t) {
+          setSubject(subjects.find(s => s.id === t.subjectId));
+        }
+        const vids = feedVideos.length > 0 ? feedVideos : store.getVideos();
+        setAvailableVideos(vids);
+        if (vids.length > 0) setSelectedAddVideoId(vids[0].id);
       }
     }
     loadData();
   }, [playlistId]);
+
+  const handleAddVideo = async () => {
+    if (!selectedAddVideoId || !playlist) return;
+    const video = availableVideos.find(v => v.id === selectedAddVideoId) || store.getVideoById(selectedAddVideoId);
+    if (!video) return;
+
+    await api.addVideoToPlaylist(playlist.id, video.id);
+    if (!items.some(i => i.videoId === video.id)) {
+      const newItem = {
+        id: `item_${Date.now()}`,
+        videoId: video.id,
+        video,
+        position: items.length,
+        purpose: `Added lesson: ${video.title}`,
+        coveredConcepts: video.topicCoverage?.map(c => c.conceptName) || []
+      };
+      setItems(prev => [...prev, newItem]);
+    }
+  };
 
   if (!playlist) {
     return (
@@ -84,6 +117,11 @@ export default function PlaylistDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs text-zinc-500">
+              {subject && (
+                <span className="px-1.5 py-0.5 rounded bg-blue-600/10 border border-blue-500/20 text-blue-400 font-semibold text-[11px]">
+                  {subject.name}
+                </span>
+              )}
               <span>{topic ? <strong>{topic.name}</strong> : 'Topic Sequence'}</span>
               <span>•</span>
               <span className="font-mono text-[11px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300">
@@ -137,13 +175,32 @@ export default function PlaylistDetailPage() {
 
       {/* Ordered Lessons List */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 className="text-sm font-bold text-zinc-200">
             Lessons Progression ({items.length})
           </h2>
-          <span className="text-xs text-zinc-500">
-            Reorder using arrows to personalize your study flow.
-          </span>
+          <div className="flex items-center gap-2">
+            {availableVideos.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <select
+                  value={selectedAddVideoId}
+                  onChange={e => setSelectedAddVideoId(e.target.value)}
+                  className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[11px] text-zinc-200 max-w-[200px] focus:outline-none focus:border-zinc-600"
+                >
+                  {availableVideos.map(v => (
+                    <option key={v.id} value={v.id}>{v.title}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleAddVideo}
+                  className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-[11px] font-semibold text-white inline-flex items-center gap-1 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Lesson</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2.5">

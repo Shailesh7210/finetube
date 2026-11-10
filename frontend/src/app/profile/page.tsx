@@ -53,7 +53,7 @@ function ProfileForm() {
   const [followedTopicIds, setFollowedTopicIds] = useState<string[]>([]);
   const [customInterests, setCustomInterests] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState('');
-  const [workspaceMode, setWorkspaceMode] = useState<'auto' | 'notes' | 'math' | 'code'>('auto');
+  const [workspaceMode, setWorkspaceMode] = useState<'auto' | 'notes' | 'math' | 'code' | 'concepts' | 'timeline'>('auto');
 
   // Study Settings
   const [preferredLanguage, setPreferredLanguage] = useState<'javascript' | 'typescript' | 'python'>('javascript');
@@ -463,9 +463,10 @@ function ProfileForm() {
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
               >
                 <option value="auto">Auto-Detect (Adapts to lecture subject)</option>
-                <option value="notes">Rich Notes & Concept Organizer</option>
-                <option value="math">Mathematics & Formula Scratchpad</option>
+                <option value="concepts">Concept Organizer &amp; Flashcards (Medicine / Humanities)</option>
+                <option value="math">Mathematics &amp; Formula Scratchpad</option>
                 <option value="code">Developer Code Sandbox</option>
+                <option value="notes">Standard Personal Notes</option>
               </select>
             </div>
 

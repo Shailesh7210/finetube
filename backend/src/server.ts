@@ -496,6 +496,106 @@ let playlists: any[] = [
     ratingCount: 48,
     coherenceScore: 96,
     redundancyPenalty: 0.02
+  },
+  {
+    id: 'pl_class12_physics',
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: 'physics_electrostatics',
+    title: "Class 12 Physics: Electrostatics & Gauss's Law",
+    description: 'Foundational charge interactions, Coulomb force vectors, electric field lines, and Gauss theorem applications.',
+    visibility: 'public',
+    items: [
+      {
+        id: 'item_phys_1',
+        videoId: 'vid_physics_electrostatics',
+        position: 0,
+        purpose: 'Charge quantization, Coulomb Law derivations, and Gaussian surface symmetry',
+        coveredConcepts: ["Coulomb's Law", 'Electric Field Intensity', "Gauss's Law"]
+      }
+    ],
+    coveredConcepts: ["Coulomb's Law", 'Electric Field Intensity', "Gauss's Law"],
+    missingConcepts: ['Electric Potential Energy & Dipoles'],
+    estimatedTotalMinutes: 32,
+    ratingAverage: 4.91,
+    ratingCount: 27,
+    coherenceScore: 95,
+    redundancyPenalty: 0.03
+  },
+  {
+    id: 'pl_organic_chem',
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: 'chem_organic_reactions',
+    title: 'Class 12 Organic Chemistry Mechanisms',
+    description: 'Systematic reaction mechanisms: nucleophiles, electrophiles, carbocation stability, SN1/SN2 pathways, and regioselectivity.',
+    visibility: 'public',
+    items: [
+      {
+        id: 'item_chem_1',
+        videoId: 'vid_chem_organic_mechanisms',
+        position: 0,
+        purpose: 'Electron pushing arrows, Markovnikov addition, and substitution pathways',
+        coveredConcepts: ['Nucleophiles & Electrophiles', "Markovnikov's Rule", 'SN1 vs SN2']
+      }
+    ],
+    coveredConcepts: ['Nucleophiles & Electrophiles', "Markovnikov's Rule", 'SN1 vs SN2'],
+    missingConcepts: ['E1/E2 Elimination Competition'],
+    estimatedTotalMinutes: 28,
+    ratingAverage: 4.88,
+    ratingCount: 22,
+    coherenceScore: 94,
+    redundancyPenalty: 0.04
+  },
+  {
+    id: 'pl_med_cardio',
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: 'med_cardiovascular_physiology',
+    title: 'Medical Physiology Crash Course: Cardiovascular System',
+    description: 'Clinical cardiac cycle mechanics, hemodynamic pressure-volume loops, conduction pathways, and Frank-Starling law.',
+    visibility: 'public',
+    items: [
+      {
+        id: 'item_med_1',
+        videoId: 'vid_med_cardiovascular',
+        position: 0,
+        purpose: 'Cardiac output regulation, SA/AV conduction, and Wiggers diagram analysis',
+        coveredConcepts: ['Cardiac Output (CO)', 'Frank-Starling Law', 'Sinoatrial Node']
+      }
+    ],
+    coveredConcepts: ['Cardiac Output (CO)', 'Frank-Starling Law', 'Sinoatrial Node'],
+    missingConcepts: ['Arterial Baroreceptor Reflexes'],
+    estimatedTotalMinutes: 35,
+    ratingAverage: 4.95,
+    ratingCount: 41,
+    coherenceScore: 97,
+    redundancyPenalty: 0.01
+  },
+  {
+    id: 'pl_world_history',
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: 'hist_french_revolution',
+    title: 'World History: The French Revolution & Modern State',
+    description: 'From Enlightenment ideals and the Estates-General crisis to the Declaration of the Rights of Man and Napoleonic reforms.',
+    visibility: 'public',
+    items: [
+      {
+        id: 'item_hist_1',
+        videoId: 'vid_hist_french_rev',
+        position: 0,
+        purpose: 'Socio-economic crisis of the Ancien Régime and 1789 institutional transformation',
+        coveredConcepts: ['Estates-General (1789)', 'Storming of the Bastille', 'Declaration of Rights']
+      }
+    ],
+    coveredConcepts: ['Estates-General (1789)', 'Storming of the Bastille', 'Declaration of Rights'],
+    missingConcepts: ['Reign of Terror & Thermidorian Reaction'],
+    estimatedTotalMinutes: 24,
+    ratingAverage: 4.87,
+    ratingCount: 18,
+    coherenceScore: 93,
+    redundancyPenalty: 0.04
   }
 ];
 
@@ -992,7 +1092,7 @@ app.get('/api/v1/playlists', (_req: Request, res: Response) => {
 });
 
 app.post('/api/v1/playlists', (req: Request, res: Response) => {
-  const { title, description, topicId, videoIds } = req.body;
+  const { title, description, topicId, videoIds, visibility } = req.body;
   if (!title) {
     return res.status(400).json({ error: 'Title is required' });
   }
@@ -1009,10 +1109,10 @@ app.post('/api/v1/playlists', (req: Request, res: Response) => {
     id: `pl_user_${Date.now()}`,
     ownerId: 'user_default',
     type: 'USER',
-    topicId: topicId || 'react_hooks',
+    topicId: topicId || 'general_knowledge',
     title: title.trim(),
     description: description?.trim() || '',
-    visibility: 'public',
+    visibility: visibility || 'public',
     items: selectedVideos.map((v, idx) => ({
       id: `item_${Date.now()}_${idx}`,
       videoId: v.id,
@@ -1026,11 +1126,47 @@ app.post('/api/v1/playlists', (req: Request, res: Response) => {
     ratingAverage: 5.0,
     ratingCount: 1,
     coherenceScore: 90,
-    redundancyPenalty: 0.0
+    redundancyPenalty: 0.0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 
   playlists.unshift(newPlaylist);
   res.status(201).json({ data: newPlaylist });
+});
+
+app.post('/api/v1/playlists/:id/items', (req: Request, res: Response) => {
+  const playlist = playlists.find(p => p.id === req.params.id);
+  if (!playlist) {
+    return res.status(404).json({ error: 'Playlist not found' });
+  }
+
+  const { videoId, purpose } = req.body;
+  const video = videos.find(v => v.id === videoId);
+  if (!video) {
+    return res.status(404).json({ error: 'Video not found' });
+  }
+
+  const existing = playlist.items.find((i: any) => i.videoId === videoId);
+  if (existing) {
+    return res.json({ data: playlist, message: 'Video already in playlist' });
+  }
+
+  const newItem = {
+    id: `item_${Date.now()}`,
+    videoId: video.id,
+    position: playlist.items.length,
+    purpose: purpose || `Lesson ${playlist.items.length + 1}: ${video.title}`,
+    coveredConcepts: video.topicCoverage?.map((c: any) => c.conceptName) || []
+  };
+
+  playlist.items.push(newItem);
+  playlist.estimatedTotalMinutes = Math.round(
+    (playlist.estimatedTotalMinutes || 0) + (video.durationSeconds || 600) / 60
+  );
+  playlist.updatedAt = new Date().toISOString();
+
+  res.status(201).json({ data: playlist });
 });
 
 app.get('/api/v1/playlists/:id', (req: Request, res: Response) => {
