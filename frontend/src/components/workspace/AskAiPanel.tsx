@@ -38,18 +38,50 @@ export function AskAiPanel({ video, onSeek }: AskAiPanelProps) {
   const [loading, setLoading] = useState(false);
   const [savedMessageId, setSavedMessageId] = useState<string | null>(null);
 
-  // Suggested quick prompts based on video topic
-  const suggestedPrompts = video.primaryTopicId === 'react_hooks'
-    ? [
+  // Suggested quick prompts dynamically generated based on video topic & concepts
+  const suggestedPrompts = (() => {
+    const tId = (video.primaryTopicId || '').toLowerCase();
+    if (tId.includes('physics')) {
+      return [
+        'How does Gauss’s Law determine the electric field here?',
+        'What are the boundary conditions and charge assumptions?',
+        'Can you summarize the core derivation step by step?'
+      ];
+    }
+    if (tId.includes('chem')) {
+      return [
+        'What governs the regioselectivity of this reaction mechanism?',
+        'How does carbocation stability influence product formation?',
+        'What are the key electrophile-nucleophile interactions?'
+      ];
+    }
+    if (tId.includes('med') || tId.includes('bio')) {
+      return [
+        'How is Cardiac Output regulated physiologically?',
+        'What compensatory mechanisms occur during acute changes?',
+        'What is the clinical significance of these findings?'
+      ];
+    }
+    if (tId.includes('hist') || tId.includes('econ') || tId.includes('law')) {
+      return [
+        'What underlying structural causes triggered this event?',
+        'How did key stakeholders and institutions respond?',
+        'What is the historical significance and long-term legacy?'
+      ];
+    }
+    if (tId === 'react_hooks') {
+      return [
         'When does the cleanup function run?',
         'How does the dependency array check equality?',
         'What is the core takeaway of this video?'
-      ]
-    : [
-        'How does BST deletion handle two children?',
-        'What is the time complexity of search and insert?',
-        'What is the BST invariant property?'
       ];
+    }
+    return [
+      `What are the foundational principles of ${video.title}?`,
+      'Can you explain the key concepts covered in this lecture?',
+      'What are the practical applications or exam takeaways?'
+    ];
+  })();
 
   const handleAsk = async (questionText: string) => {
     const q = questionText.trim();

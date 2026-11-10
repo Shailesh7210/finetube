@@ -777,6 +777,106 @@ export const INITIAL_PLAYLISTS: Playlist[] = [
     ratingCount: 19,
     createdAt: '2026-08-15T09:00:00Z',
     updatedAt: '2026-09-20T16:00:00Z'
+  },
+  {
+    id: 'pl_class12_physics',
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: 'physics_electrostatics',
+    title: "Class 12 Physics: Electrostatics & Gauss's Law",
+    description: 'Foundational charge interactions, Coulomb force vectors, electric field lines, and Gauss theorem applications.',
+    visibility: 'public',
+    items: [
+      {
+        id: 'item_phys_1',
+        videoId: 'vid_physics_electrostatics',
+        position: 0,
+        purpose: 'Charge quantization, Coulomb Law derivations, and Gaussian surface symmetry',
+        coveredConcepts: ["Coulomb's Law", 'Electric Field Intensity', "Gauss's Law"]
+      }
+    ],
+    coveredConcepts: ["Coulomb's Law", 'Electric Field Intensity', "Gauss's Law"],
+    missingConcepts: ['Electric Potential Energy & Dipoles'],
+    estimatedTotalMinutes: 32,
+    ratingAverage: 4.91,
+    ratingCount: 27,
+    createdAt: '2026-10-01T09:00:00Z',
+    updatedAt: '2026-10-15T16:00:00Z'
+  },
+  {
+    id: 'pl_organic_chem',
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: 'chem_organic_reactions',
+    title: 'Class 12 Organic Chemistry Mechanisms',
+    description: 'Systematic reaction mechanisms: nucleophiles, electrophiles, carbocation stability, SN1/SN2 pathways, and regioselectivity.',
+    visibility: 'public',
+    items: [
+      {
+        id: 'item_chem_1',
+        videoId: 'vid_chem_organic_mechanisms',
+        position: 0,
+        purpose: 'Electron pushing arrows, Markovnikov addition, and substitution pathways',
+        coveredConcepts: ['Nucleophiles & Electrophiles', "Markovnikov's Rule", 'SN1 vs SN2']
+      }
+    ],
+    coveredConcepts: ['Nucleophiles & Electrophiles', "Markovnikov's Rule", 'SN1 vs SN2'],
+    missingConcepts: ['E1/E2 Elimination Competition'],
+    estimatedTotalMinutes: 28,
+    ratingAverage: 4.88,
+    ratingCount: 22,
+    createdAt: '2026-10-02T09:00:00Z',
+    updatedAt: '2026-10-15T16:00:00Z'
+  },
+  {
+    id: 'pl_med_cardio',
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: 'med_cardiovascular_physiology',
+    title: 'Medical Physiology Crash Course: Cardiovascular System',
+    description: 'Clinical cardiac cycle mechanics, hemodynamic pressure-volume loops, conduction pathways, and Frank-Starling law.',
+    visibility: 'public',
+    items: [
+      {
+        id: 'item_med_1',
+        videoId: 'vid_med_cardiovascular',
+        position: 0,
+        purpose: 'Cardiac output regulation, SA/AV conduction, and Wiggers diagram analysis',
+        coveredConcepts: ['Cardiac Output (CO)', 'Frank-Starling Law', 'Sinoatrial Node']
+      }
+    ],
+    coveredConcepts: ['Cardiac Output (CO)', 'Frank-Starling Law', 'Sinoatrial Node'],
+    missingConcepts: ['Arterial Baroreceptor Reflexes'],
+    estimatedTotalMinutes: 35,
+    ratingAverage: 4.95,
+    ratingCount: 41,
+    createdAt: '2026-10-03T09:00:00Z',
+    updatedAt: '2026-10-15T16:00:00Z'
+  },
+  {
+    id: 'pl_world_history',
+    ownerId: 'platform_curator',
+    type: 'AI',
+    topicId: 'hist_french_revolution',
+    title: 'World History: The French Revolution & Modern State',
+    description: 'From Enlightenment ideals and the Estates-General crisis to the Declaration of the Rights of Man and Napoleonic reforms.',
+    visibility: 'public',
+    items: [
+      {
+        id: 'item_hist_1',
+        videoId: 'vid_hist_french_rev',
+        position: 0,
+        purpose: 'Socio-economic crisis of the Ancien Régime and 1789 institutional transformation',
+        coveredConcepts: ['Estates-General (1789)', 'Storming of the Bastille', 'Declaration of Rights']
+      }
+    ],
+    coveredConcepts: ['Estates-General (1789)', 'Storming of the Bastille', 'Declaration of Rights'],
+    missingConcepts: ['Reign of Terror & Thermidorian Reaction'],
+    estimatedTotalMinutes: 24,
+    ratingAverage: 4.87,
+    ratingCount: 18,
+    createdAt: '2026-10-04T09:00:00Z',
+    updatedAt: '2026-10-15T16:00:00Z'
   }
 ];
 

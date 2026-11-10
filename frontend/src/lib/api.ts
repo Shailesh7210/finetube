@@ -265,6 +265,44 @@ export const api = {
     return remote;
   },
 
+  async createPlaylist(data: { title: string; description: string; topicId: string; videoIds?: string[]; visibility?: 'public' | 'unlisted' | 'private' }): Promise<Playlist | null> {
+    const remote = await safeFetch<Playlist>('/playlists', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    if (remote) return remote;
+    // Store fallback
+    const selectedVideos = (data.videoIds || [])
+      .map(id => store.getVideoById(id))
+      .filter((v): v is Video => !!v);
+    const created = store.createPlaylist({
+      type: 'USER',
+      topicId: data.topicId,
+      title: data.title,
+      description: data.description,
+      visibility: data.visibility || 'public',
+      items: selectedVideos.map((v, idx) => ({
+        id: `item_${Date.now()}_${idx}`,
+        videoId: v.id,
+        position: idx,
+        purpose: `Lesson ${idx + 1}: ${v.title}`,
+        coveredConcepts: v.topicCoverage?.map(c => c.conceptName) || []
+      })),
+      coveredConcepts: selectedVideos.flatMap(v => v.topicCoverage?.map(c => c.conceptName) || []),
+      missingConcepts: [],
+      estimatedTotalMinutes: Math.round(selectedVideos.reduce((acc, v) => acc + v.durationSeconds, 0) / 60) || 15
+    });
+    return created;
+  },
+
+  async addVideoToPlaylist(playlistId: string, videoId: string, purpose?: string): Promise<Playlist | null> {
+    const remote = await safeFetch<Playlist>(`/playlists/${playlistId}/items`, {
+      method: 'POST',
+      body: JSON.stringify({ videoId, purpose })
+    });
+    return remote;
+  },
+
   // AI Assistant
   async askGroundedQuestion(videoId: string, question: string): Promise<any> {
     const remote = await safeFetch<any>('/ai/ask', {
