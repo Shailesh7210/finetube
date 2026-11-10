@@ -179,12 +179,24 @@ export interface Folder {
   updatedAt: string;
 }
 
+export type CodeLanguage =
+  | 'javascript'
+  | 'typescript'
+  | 'python'
+  | 'cpp'
+  | 'c'
+  | 'java'
+  | 'go'
+  | 'rust'
+  | 'sql'
+  | 'bash';
+
 export interface CodeWorkspace {
   id: string;
   ownerId: string;
   videoId?: string;
   topicId?: string;
-  language: 'javascript' | 'typescript' | 'python';
+  language: CodeLanguage;
   code: string;
   output?: string;
   updatedAt: string;
@@ -211,7 +223,7 @@ export interface UserProfile {
   mutedTopicIds: string[];
   customInterests?: string[];
   workspaceMode?: 'auto' | 'notes' | 'math' | 'code' | 'concepts' | 'timeline';
-  preferredLanguage?: 'javascript' | 'typescript' | 'python';
+  preferredLanguage?: CodeLanguage;
   dailyGoalMinutes?: number;
   strictFocusMode?: boolean;
   avatarUrl?: string;

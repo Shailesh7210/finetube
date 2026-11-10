@@ -8,6 +8,7 @@ import { store } from '@/lib/store';
 import { Check, Plus, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { UsageQuotaCard } from '@/components/profile/UsageQuotaCard';
+import { CodeLanguage } from '@/lib/types';
 
 const EDUCATION_LEVEL_OPTIONS = [
   { id: 'not_specified', label: 'Open Learner / Not Specified' },
@@ -53,7 +54,7 @@ function ProfileForm() {
   const [newTagInput, setNewTagInput] = useState('');
   const [workspaceMode, setWorkspaceMode] = useState<'auto' | 'notes' | 'math' | 'code' | 'concepts' | 'timeline'>('auto');
 
-  const [preferredLanguage, setPreferredLanguage] = useState<'javascript' | 'typescript' | 'python'>('javascript');
+  const [preferredLanguage, setPreferredLanguage] = useState<CodeLanguage>('javascript');
   const [dailyGoalMinutes, setDailyGoalMinutes] = useState(30);
   const [strictFocusMode, setStrictFocusMode] = useState(true);
 
