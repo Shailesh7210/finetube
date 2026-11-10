@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import { calculateTopicScore } from './services/rankingService.js';
-import { answerGroundedQuestion, generateStructuredNotesForVideo, generateConceptQuizForVideo, queueVideoIngestion, onIngestionComplete, jobsQueue } from './services/aiService.js';
+import { answerGroundedQuestion, generateStructuredNotesForVideo, generateConceptQuizForVideo, queueVideoIngestion, onIngestionComplete, jobsQueue, classifyVideoMetadata } from './services/aiService.js';
 import { getUserUsage, recordAiQuery, recordAiNote, recordSandboxRun, setUserTier, getSystemUnitEconomics } from './services/budgetService.js';
 import { createSnapshot, listSnapshots, restoreSnapshot } from './services/backupService.js';
 import { taxonomyRegistry, UNIVERSAL_SUBJECTS, UNIVERSAL_TOPICS } from './services/taxonomyService.js';
@@ -1176,6 +1176,78 @@ app.post('/api/v1/topics/:id/ai-playlists', (req: Request, res: Response) => {
   res.status(201).json({ data: generatedPlaylist });
 });
 
+// AI Video Classification & Multi-Topic Mapping (Blueprint Section 6)
+app.post('/api/v1/ai/classify', (req: Request, res: Response) => {
+  const { title, description, tags, channelTitle } = req.body;
+  if (!title || typeof title !== 'string') {
+    return res.status(400).json({ error: 'title is required for video classification' });
+  }
+  const result = classifyVideoMetadata({ title, description, tags, channelTitle });
+  res.json({ data: result });
+});
+
+app.post('/api/v1/videos/:id/classify', (req: Request, res: Response) => {
+  const video = videos.find(v => v.id === req.params.id);
+  if (!video) return res.status(404).json({ error: 'Video not found' });
+
+  const classification = classifyVideoMetadata({
+    title: video.title,
+    description: video.description,
+    channelTitle: video.channelTitle
+  });
+
+  video.primaryTopicId = classification.primaryTopic.id;
+  video.secondaryTopicIds = classification.secondaryTopics.map(st => st.id);
+  if (video.aiAssessment) {
+    video.aiAssessment.needsHumanReview = classification.needsHumanReview;
+  }
+
+  // If low confidence, automatically queue for human/admin review
+  if (classification.needsHumanReview) {
+    const existingQueueItem = reviewQueue.find(r => r.videoId === video.id);
+    if (!existingQueueItem) {
+      reviewQueue.unshift({
+        id: `rev_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        videoId: video.id,
+        title: video.title,
+        detectedSubject: classification.mainSubject.name,
+        detectedTopic: classification.primaryTopic.name,
+        confidence: classification.confidenceScore,
+        reason: classification.evidenceReason,
+        status: 'pending_review',
+        submittedAt: new Date().toISOString()
+      });
+    }
+  }
+
+  res.json({ data: { video, classification } });
+});
+
+// Admin correction endpoint to update video classification
+app.put('/api/v1/videos/:id/classification', (req: Request, res: Response) => {
+  const video = videos.find(v => v.id === req.params.id);
+  if (!video) return res.status(404).json({ error: 'Video not found' });
+
+  const { primaryTopicId, secondaryTopicIds, resolutionNote } = req.body;
+  if (primaryTopicId) {
+    video.primaryTopicId = primaryTopicId;
+  }
+  if (Array.isArray(secondaryTopicIds)) {
+    video.secondaryTopicIds = secondaryTopicIds;
+  }
+  if (video.aiAssessment) {
+    video.aiAssessment.needsHumanReview = false;
+  }
+
+  const queueItem = reviewQueue.find(r => r.videoId === video.id);
+  if (queueItem) {
+    queueItem.status = 'corrected_and_approved';
+    queueItem.resolvedAt = new Date().toISOString();
+  }
+
+  res.json({ success: true, data: video });
+});
+
 // Admin & Operations (Blueprint Section 16)
 app.get('/api/v1/admin/review-queue', (_req: Request, res: Response) => {
   res.json({ data: reviewQueue });
@@ -1184,8 +1256,21 @@ app.get('/api/v1/admin/review-queue', (_req: Request, res: Response) => {
 app.post('/api/v1/admin/review-queue/:id/resolve', (req: Request, res: Response) => {
   const item = reviewQueue.find(r => r.id === req.params.id);
   if (!item) return res.status(404).json({ error: 'Review item not found' });
-  const { decision } = req.body;
+  const { decision, correctedTopicId, resolutionNote } = req.body;
   item.status = decision || 'approved';
+  item.resolvedAt = new Date().toISOString();
+  if (resolutionNote) item.resolutionNote = resolutionNote;
+
+  if (correctedTopicId && item.videoId) {
+    const targetVideo = videos.find(v => v.id === item.videoId);
+    if (targetVideo) {
+      targetVideo.primaryTopicId = correctedTopicId;
+      if (targetVideo.aiAssessment) {
+        targetVideo.aiAssessment.needsHumanReview = false;
+      }
+    }
+  }
+
   res.json({ data: item });
 });
 

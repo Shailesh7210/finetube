@@ -181,6 +181,20 @@ export const api = {
     return remote || { dailyEstimatedQuotaLimit: 10000, pointsUsedToday: 0, remainingPoints: 10000 };
   },
 
+  // AI Video Classification & Moderation (Blueprint §6)
+  async classifyVideo(videoId: string): Promise<any> {
+    const remote = await safeFetch<any>(`/videos/${videoId}/classify`, { method: 'POST' });
+    return remote;
+  },
+
+  async correctVideoClassification(videoId: string, updates: { primaryTopicId?: string; secondaryTopicIds?: string[]; resolutionNote?: string }): Promise<any> {
+    const remote = await safeFetch<any>(`/videos/${videoId}/classification`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+    return remote;
+  },
+
   // Videos
   async getVideo(id: string): Promise<Video | null> {
     const remote = await safeFetch<Video>(`/videos/${id}`);

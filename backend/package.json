@@ -13,7 +13,8 @@
     "test:ndcg": "tsx src/tests/rankingEvaluationNDCG.test.ts",
     "test:taxonomy": "tsx src/tests/universalTaxonomy.test.ts",
     "test:youtube": "tsx src/tests/youtubeDiscovery.test.ts",
-    "test:all": "tsx src/tests/blueprintQualityGates.test.ts && tsx src/tests/pilotEndToEndSimulation.test.ts && tsx src/tests/disasterRecovery.test.ts && tsx src/tests/rankingEvaluationNDCG.test.ts && tsx src/tests/universalTaxonomy.test.ts && tsx src/tests/youtubeDiscovery.test.ts"
+    "test:classification": "tsx src/tests/videoClassification.test.ts",
+    "test:all": "tsx src/tests/blueprintQualityGates.test.ts && tsx src/tests/pilotEndToEndSimulation.test.ts && tsx src/tests/disasterRecovery.test.ts && tsx src/tests/rankingEvaluationNDCG.test.ts && tsx src/tests/universalTaxonomy.test.ts && tsx src/tests/youtubeDiscovery.test.ts && tsx src/tests/videoClassification.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
