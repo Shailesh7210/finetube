@@ -3,139 +3,64 @@
 import { useState, useEffect } from 'react';
 import { Play, BookmarkPlus, Check, RotateCcw, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { CodeLanguage } from '@/lib/types';
 
 interface CodeEditorSandboxProps {
   videoId?: string;
   topicId?: string;
 }
 
-const TEMPLATES: Record<string, Record<string, string>> = {
-  react_hooks: {
-    javascript: `// React Hook Lifecycle Simulation
-function simulateEffect(dependencies) {
-  console.log("Effect executed with deps:", JSON.stringify(dependencies));
-  return function cleanup() {
-    console.log("Cleaned up previous effect resources");
-  };
-}
+const LANGUAGE_OPTIONS: { id: CodeLanguage; label: string }[] = [
+  { id: 'javascript', label: 'JavaScript' },
+  { id: 'typescript', label: 'TypeScript' },
+  { id: 'python', label: 'Python' },
+  { id: 'cpp', label: 'C++' },
+  { id: 'c', label: 'C' },
+  { id: 'java', label: 'Java' },
+  { id: 'go', label: 'Go' },
+  { id: 'rust', label: 'Rust' },
+  { id: 'sql', label: 'SQL' },
+  { id: 'bash', label: 'Bash / Shell' }
+];
 
-const cleanup = simulateEffect([1, "active"]);
-cleanup();`,
-    python: `# Python State Simulator
-def simulate_state(initial):
-    state = [initial]
-    def set_state(new_val):
-        state[0] = new_val
-        print(f"State mutated to: {new_val}")
-    return state, set_state
-
-val, update_val = simulate_state(10)
-update_val(25)`,
-    typescript: `// TypeScript Typed Hook State
-interface State<T> {
-  data: T;
-  isLoading: boolean;
-}
-
-const hookState: State<string> = {
-  data: "Synchronized User Profile",
-  isLoading: false
+const DEFAULT_TEMPLATES: Record<CodeLanguage, string> = {
+  javascript: `// JavaScript Playground\nfunction greet(topic) {\n  console.log("Studying:", topic);\n}\ngreet("Algorithms & Architecture");`,
+  typescript: `// TypeScript Playground\ninterface Lesson {\n  title: string;\n  completed: boolean;\n}\nconst lesson: Lesson = { title: "Type Safety", completed: true };\nconsole.log("Verified:", lesson.title);`,
+  python: `# Python 3 Playground\ndef solve(nums):\n    return sum(nums)\n\nprint("Result: 15")`,
+  cpp: `// C++20 Playground\n#include <iostream>\nint main() {\n    std::cout << "Hello from C++20!" << std::endl;\n    return 0;\n}`,
+  c: `// C17 Playground\n#include <stdio.h>\nint main() {\n    printf("Hello from C Sandbox!");\n    return 0;\n}`,
+  java: `// Java 21 Playground\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello from Java!");\n    }\n}`,
+  go: `// Go 1.22 Playground\npackage main\nimport "fmt"\nfunc main() {\n    fmt.Println("Hello from Go Sandbox!")\n}`,
+  rust: `// Rust Playground\nfn main() {\n    println!("Hello from Rust Sandbox!");\n}`,
+  sql: `-- SQL Query Sandbox\nSELECT topic_name, rating_average\nFROM educational_videos\nWHERE rating_average >= 4.5\nORDER BY rating_average DESC;`,
+  bash: `# Bash / Shell Playground\necho "Initializing FineTube study environment..."\necho "Workspace ready."`
 };
 
-console.log("Typed State Data:", hookState.data);`
+const TOPIC_TEMPLATES: Record<string, Partial<Record<CodeLanguage, string>>> = {
+  react_hooks: {
+    javascript: `// React Hook Lifecycle Simulation\nfunction simulateEffect(deps) {\n  console.log("Effect executed with deps:", JSON.stringify(deps));\n  return () => console.log("Cleaned up previous effect");\n}\nconst cleanup = simulateEffect([1, "active"]);\ncleanup();`,
+    typescript: `// TypeScript Typed Hook State\ninterface State<T> {\n  data: T;\n  isLoading: boolean;\n}\nconst hookState: State<string> = { data: "Synced Profile", isLoading: false };\nconsole.log("Typed State:", hookState.data);`,
+    python: `# Python State Simulator\nstate = ["initialized"]\nprint("State updated to: active")`
   },
   binary_search_trees: {
-    javascript: `// Binary Search Tree (BST) Node & Invariant Check
-class BSTNode {
-  constructor(val) {
-    this.val = val;
-    this.left = null;
-    this.right = null;
-  }
-}
-
-function insert(root, val) {
-  if (!root) return new BSTNode(val);
-  if (val < root.val) root.left = insert(root.left, val);
-  else root.right = insert(root.right, val);
-  return root;
-}
-
-let root = insert(null, 20);
-insert(root, 10);
-insert(root, 30);
-
-console.log("BST Root:", root.val);
-console.log("Left Child (< Root):", root.left.val);
-console.log("Right Child (> Root):", root.right.val);`,
-    python: `# Binary Search Tree Insertion
-class Node:
-    def __init__(self, key):
-        self.key = key
-        self.left = None
-        self.right = None
-
-print("Initialized BST Node class")`,
-    typescript: `// BST Generic Definition
-class TreeNode<T> {
-  val: T;
-  left: TreeNode<T> | null = null;
-  right: TreeNode<T> | null = null;
-  constructor(val: T) {
-    this.val = val;
-  }
-}
-const n = new TreeNode<number>(42);
-console.log("Created root node with value:", n.val);`
+    javascript: `// Binary Search Tree Insertion\nclass BSTNode {\n  constructor(val) { this.val = val; this.left = null; this.right = null; }\n}\nfunction insert(root, val) {\n  if (!root) return new BSTNode(val);\n  if (val < root.val) root.left = insert(root.left, val);\n  else root.right = insert(root.right, val);\n  return root;\n}\nlet root = insert(null, 20);\ninsert(root, 10);\ninsert(root, 30);\nconsole.log("Root:", root.val, "| Left:", root.left.val, "| Right:", root.right.val);`,
+    cpp: `// C++ Binary Search Tree Node\n#include <iostream>\nstruct Node { int val; Node *left, *right; };\nint main() {\n    std::cout << "BST Node invariant verified: left < root < right";\n    return 0;\n}`,
+    java: `// Java BST Traversal\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("In-order traversal yields sorted sequence");\n    }\n}`,
+    python: `# Python BST Check\nprint("BST invariant: left < root < right")`
   },
   system_design: {
-    javascript: `// Distributed Cache with LRU Eviction
-class LRUCache {
-  constructor(capacity) {
-    this.capacity = capacity;
-    this.cache = new Map();
-  }
-  get(key) {
-    if (!this.cache.has(key)) return -1;
-    const v = this.cache.get(key);
-    this.cache.delete(key);
-    this.cache.set(key, v);
-    return v;
-  }
-  put(key, val) {
-    if (this.cache.has(key)) this.cache.delete(key);
-    else if (this.cache.size >= this.capacity) {
-      const oldest = this.cache.keys().next().value;
-      this.cache.delete(oldest);
-      console.log("Evicted LRU key from cache:", oldest);
-    }
-    this.cache.set(key, val);
-  }
-}
-
-const c = new LRUCache(2);
-c.put("session_1", "active");
-c.put("session_2", "active");
-c.put("session_3", "active");
-console.log("Session 1 present:", c.get("session_1"));`,
-    python: `# Simple Token Bucket Rate Limiter
-capacity = 10
-tokens = 10
-print(f"Token bucket initialized with capacity: {capacity}")`,
-    typescript: `// Load Balancer Round Robin
-const servers = ["10.0.0.1", "10.0.0.2", "10.0.0.3"];
-let idx = 0;
-function getNext() {
-  const target = servers[idx];
-  idx = (idx + 1) % servers.length;
-  return target;
-}
-console.log("Routed request to:", getNext());`
+    javascript: `// Distributed Cache with LRU Eviction\nclass LRUCache {\n  constructor(cap) { this.cap = cap; this.cache = new Map(); }\n  put(k, v) {\n    if (this.cache.has(k)) this.cache.delete(k);\n    else if (this.cache.size >= this.cap) {\n      const oldest = this.cache.keys().next().value;\n      this.cache.delete(oldest);\n      console.log("Evicted:", oldest);\n    }\n    this.cache.set(k, v);\n  }\n}\nconst c = new LRUCache(2);\nc.put("s1", 1); c.put("s2", 2); c.put("s3", 3);`,
+    go: `// Go Load Balancer Round-Robin\npackage main\nimport "fmt"\nfunc main() {\n    fmt.Println("Routed request to backend node 10.0.0.1")\n}`,
+    sql: `-- Cache Hit Rate Analytics\nSELECT service_name, cache_hit_ratio\nFROM system_metrics\nORDER BY cache_hit_ratio DESC;`
   }
 };
 
+function getTemplate(topicId: string, lang: CodeLanguage): string {
+  return TOPIC_TEMPLATES[topicId]?.[lang] || DEFAULT_TEMPLATES[lang];
+}
+
 export function CodeEditorSandbox({ videoId, topicId = 'react_hooks' }: CodeEditorSandboxProps) {
-  const [language, setLanguage] = useState<'javascript' | 'python' | 'typescript'>('javascript');
+  const [language, setLanguage] = useState<CodeLanguage>('javascript');
   const [code, setCode] = useState('');
   const [output, setOutput] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -143,16 +68,12 @@ export function CodeEditorSandbox({ videoId, topicId = 'react_hooks' }: CodeEdit
   const [quotaRemaining, setQuotaRemaining] = useState<number>(48);
   const [isSaved, setIsSaved] = useState(false);
 
-  // Load template on mount or topic/language switch
   useEffect(() => {
-    const topicKey = topicId in TEMPLATES ? topicId : 'react_hooks';
-    const initial = TEMPLATES[topicKey][language] || TEMPLATES.react_hooks.javascript;
-    setCode(initial);
+    setCode(getTemplate(topicId, language));
     setOutput([]);
     setExecutionTime(null);
   }, [topicId, language]);
 
-  // Load quota
   useEffect(() => {
     async function loadQuota() {
       const q = await api.getCodeQuota();
@@ -178,15 +99,15 @@ export function CodeEditorSandbox({ videoId, topicId = 'react_hooks' }: CodeEdit
   };
 
   const handleSaveToLibrary = async () => {
-    const title = `${language.toUpperCase()} Practice: ${topicId.replace('_', ' ')}`;
+    const label = LANGUAGE_OPTIONS.find(l => l.id === language)?.label || language.toUpperCase();
+    const title = `${label} Snippet: ${topicId.replace(/_/g, ' ')}`;
     await api.saveCodeSnippet(title, code, language, videoId, topicId);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
 
   const handleReset = () => {
-    const topicKey = topicId in TEMPLATES ? topicId : 'react_hooks';
-    setCode(TEMPLATES[topicKey][language] || '');
+    setCode(getTemplate(topicId, language));
     setOutput([]);
     setExecutionTime(null);
   };
@@ -197,12 +118,14 @@ export function CodeEditorSandbox({ videoId, topicId = 'react_hooks' }: CodeEdit
         <div className="flex items-center gap-2">
           <select
             value={language}
-            onChange={(e) => setLanguage(e.target.value as any)}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-500"
+            onChange={(e) => setLanguage(e.target.value as CodeLanguage)}
+            className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-500"
           >
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="typescript">TypeScript</option>
+            {LANGUAGE_OPTIONS.map(opt => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
           </select>
 
           <span className="text-xs text-slate-500 font-mono hidden sm:inline">
