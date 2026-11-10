@@ -789,7 +789,7 @@ export const INITIAL_PLAYLISTS: Playlist[] = [
     items: [
       {
         id: 'item_phys_1',
-        videoId: 'vid_physics_electrostatics',
+        videoId: 'vid_physics_electrostatics_cbse',
         position: 0,
         purpose: 'Charge quantization, Coulomb Law derivations, and Gaussian surface symmetry',
         coveredConcepts: ["Coulomb's Law", 'Electric Field Intensity', "Gauss's Law"]
@@ -814,7 +814,7 @@ export const INITIAL_PLAYLISTS: Playlist[] = [
     items: [
       {
         id: 'item_chem_1',
-        videoId: 'vid_chem_organic_mechanisms',
+        videoId: 'vid_chem_organic_reactions_mastery',
         position: 0,
         purpose: 'Electron pushing arrows, Markovnikov addition, and substitution pathways',
         coveredConcepts: ['Nucleophiles & Electrophiles', "Markovnikov's Rule", 'SN1 vs SN2']
@@ -839,7 +839,7 @@ export const INITIAL_PLAYLISTS: Playlist[] = [
     items: [
       {
         id: 'item_med_1',
-        videoId: 'vid_med_cardiovascular',
+        videoId: 'vid_med_cardio_anatomy',
         position: 0,
         purpose: 'Cardiac output regulation, SA/AV conduction, and Wiggers diagram analysis',
         coveredConcepts: ['Cardiac Output (CO)', 'Frank-Starling Law', 'Sinoatrial Node']
@@ -864,7 +864,7 @@ export const INITIAL_PLAYLISTS: Playlist[] = [
     items: [
       {
         id: 'item_hist_1',
-        videoId: 'vid_hist_french_rev',
+        videoId: 'vid_hist_french_revolution_crash',
         position: 0,
         purpose: 'Socio-economic crisis of the Ancien Régime and 1789 institutional transformation',
         coveredConcepts: ['Estates-General (1789)', 'Storming of the Bastille', 'Declaration of Rights']
