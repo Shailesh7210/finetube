@@ -126,8 +126,8 @@ export default function WatchPage() {
   if (!video) {
     return (
       <div className="max-w-4xl mx-auto py-20 px-4 text-center space-y-3">
-        <h2 className="text-lg font-medium text-white">Video not found</h2>
-        <Link href="/feed" className="text-sm text-blue-400 hover:underline">
+        <h2 className="text-lg font-medium text-slate-900">Video not found</h2>
+        <Link href="/feed" className="text-sm text-indigo-600 hover:underline">
           Return to feed
         </Link>
       </div>
@@ -176,19 +176,19 @@ export default function WatchPage() {
           <div className="space-y-3 pt-1">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="space-y-1.5">
-                <h1 className="text-xl sm:text-2xl font-bold text-zinc-100 leading-snug">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug">
                   {video.title}
                 </h1>
-                <div className="flex items-center gap-3 text-sm text-zinc-400">
-                  <span className="font-medium text-zinc-300">{video.channelTitle}</span>
+                <div className="flex items-center gap-3 text-sm text-slate-600">
+                  <span className="font-medium text-slate-800">{video.channelTitle}</span>
                   {topic && (
                     <>
-                      <span className="text-zinc-600">•</span>
-                      <span>{topic.name}</span>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-indigo-600 font-medium">{topic.name}</span>
                     </>
                   )}
-                  <span className="text-zinc-600">•</span>
-                  <span className="flex items-center gap-1 text-zinc-200 font-medium">
+                  <span className="text-slate-300">•</span>
+                  <span className="flex items-center gap-1 text-slate-800 font-medium">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                     {bayesianRating}
                   </span>
@@ -199,20 +199,20 @@ export default function WatchPage() {
                 <button
                   onClick={handleSaveToLibrary}
                   disabled={isSaved}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-zinc-200 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-700 hover:text-slate-900 bg-white border border-slate-300 hover:bg-slate-100 transition-colors"
                 >
                   {isSaved ? 'Saved' : 'Save'}
                 </button>
                 <button
                   onClick={() => setIsRatingModalOpen(true)}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-zinc-800 hover:bg-zinc-700 transition-colors"
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors"
                 >
                   Rate
                 </button>
                 <button
                   onClick={() => setIsReportModalOpen(true)}
                   title="Report inaccuracy"
-                  className="p-2 rounded-xl text-zinc-400 hover:text-amber-400 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
+                  className="p-2 rounded-xl text-slate-500 hover:text-amber-600 bg-white border border-slate-300 hover:bg-slate-100 transition-colors"
                   aria-label="Report inaccuracy"
                 >
                   <Flag className="w-4 h-4" />
@@ -221,7 +221,7 @@ export default function WatchPage() {
             </div>
 
             {video.description && (
-              <p className="text-sm text-zinc-400 leading-relaxed pt-1">
+              <p className="text-sm text-slate-600 leading-relaxed pt-1">
                 {video.description}
               </p>
             )}
@@ -229,15 +229,15 @@ export default function WatchPage() {
         </div>
 
         {/* Right: Adaptive Study Workspace (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col h-[600px] lg:h-[700px] border border-zinc-800/80 rounded-2xl overflow-hidden bg-zinc-950">
-          {/* Clean Tabs Bar */}
-          <div className="flex items-center border-b border-zinc-800/80 bg-zinc-900/50 overflow-x-auto scrollbar-none shrink-0">
+        <div className="lg:col-span-5 flex flex-col h-[600px] lg:h-[700px] border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+          {/* Tabs Bar */}
+          <div className="flex items-center border-b border-slate-200 bg-slate-50 overflow-x-auto scrollbar-none shrink-0">
             <button
               onClick={() => setActiveTab('notes')}
               className={`min-w-[68px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'notes'
-                  ? 'border-white text-white font-semibold'
-                  : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                  ? 'border-slate-900 text-slate-900 font-semibold bg-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
               }`}
             >
               Notes
@@ -247,8 +247,8 @@ export default function WatchPage() {
               onClick={() => setActiveTab('adaptive')}
               className={`min-w-[82px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'adaptive'
-                  ? 'border-blue-400 text-blue-400 font-semibold'
-                  : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                  ? 'border-indigo-600 text-indigo-600 font-semibold bg-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
               }`}
             >
               {adaptiveToolMode === 'math' ? 'Formulas' : adaptiveToolMode === 'concepts' ? 'Concepts' : 'Code'}
@@ -258,8 +258,8 @@ export default function WatchPage() {
               onClick={() => setActiveTab('quiz')}
               className={`min-w-[64px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'quiz'
-                  ? 'border-white text-white font-semibold'
-                  : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                  ? 'border-slate-900 text-slate-900 font-semibold bg-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
               }`}
             >
               Quiz
@@ -269,8 +269,8 @@ export default function WatchPage() {
               onClick={() => setActiveTab('ai_notes')}
               className={`min-w-[78px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'ai_notes'
-                  ? 'border-white text-white font-semibold'
-                  : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                  ? 'border-slate-900 text-slate-900 font-semibold bg-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
               }`}
             >
               AI Notes
@@ -280,8 +280,8 @@ export default function WatchPage() {
               onClick={() => setActiveTab('ask_ai')}
               className={`min-w-[68px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'ask_ai'
-                  ? 'border-white text-white font-semibold'
-                  : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                  ? 'border-slate-900 text-slate-900 font-semibold bg-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
               }`}
             >
               Ask AI
@@ -291,8 +291,8 @@ export default function WatchPage() {
               onClick={() => setActiveTab('chapters')}
               className={`min-w-[78px] sm:flex-1 py-3 px-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap text-center ${
                 activeTab === 'chapters'
-                  ? 'border-white text-white font-semibold'
-                  : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                  ? 'border-slate-900 text-slate-900 font-semibold bg-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
               }`}
             >
               Chapters
@@ -301,15 +301,15 @@ export default function WatchPage() {
 
           {/* Sub-header mode switcher for Adaptive Tool */}
           {activeTab === 'adaptive' && (
-            <div className="px-4 py-2 bg-zinc-900/80 border-b border-zinc-800/80 flex items-center justify-between text-xs">
-              <span className="text-zinc-400">Tool</span>
+            <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Tool</span>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setAdaptiveToolMode('math')}
                   className={`px-2.5 py-1 rounded-lg transition-colors ${
                     adaptiveToolMode === 'math'
-                      ? 'bg-zinc-800 text-white font-semibold'
-                      : 'text-zinc-500 hover:text-zinc-300'
+                      ? 'bg-slate-900 text-white font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                 >
                   Formulas
@@ -318,8 +318,8 @@ export default function WatchPage() {
                   onClick={() => setAdaptiveToolMode('concepts')}
                   className={`px-2.5 py-1 rounded-lg transition-colors ${
                     adaptiveToolMode === 'concepts'
-                      ? 'bg-zinc-800 text-white font-semibold'
-                      : 'text-zinc-500 hover:text-zinc-300'
+                      ? 'bg-slate-900 text-white font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                 >
                   Concepts
@@ -328,8 +328,8 @@ export default function WatchPage() {
                   onClick={() => setAdaptiveToolMode('code')}
                   className={`px-2.5 py-1 rounded-lg transition-colors ${
                     adaptiveToolMode === 'code'
-                      ? 'bg-zinc-800 text-white font-semibold'
-                      : 'text-zinc-500 hover:text-zinc-300'
+                      ? 'bg-slate-900 text-white font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                 >
                   Code
@@ -339,7 +339,7 @@ export default function WatchPage() {
           )}
 
           {/* Panel Content */}
-          <div className="flex-1 overflow-hidden p-4">
+          <div className="flex-1 overflow-hidden p-4 bg-white">
             {activeTab === 'notes' && (
               <PersonalNotesPanel
                 videoId={video.id}
@@ -398,10 +398,10 @@ export default function WatchPage() {
                   <button
                     key={idx}
                     onClick={() => handleSeek(chap.start)}
-                    className="w-full text-left p-3 rounded-xl hover:bg-zinc-900 flex items-center justify-between text-sm text-zinc-300 transition-colors"
+                    className="w-full text-left p-3 rounded-xl hover:bg-slate-100 flex items-center justify-between text-sm text-slate-700 transition-colors"
                   >
                     <span>{chap.title}</span>
-                    <span className="font-mono text-zinc-500 text-xs shrink-0">
+                    <span className="font-mono text-slate-500 text-xs shrink-0">
                       {formatTimestamp(chap.start)}
                     </span>
                   </button>
@@ -412,13 +412,13 @@ export default function WatchPage() {
         </div>
       </div>
 
-      {/* Minimal Shortcuts Trigger */}
-      <div className="pt-4 mt-6 border-t border-zinc-900 flex items-center">
+      {/* Shortcuts Trigger */}
+      <div className="pt-4 mt-6 border-t border-slate-200 flex items-center">
         <button
           onClick={() => setShowShortcutsModal(true)}
-          className="inline-flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+          className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-slate-900 transition-colors"
         >
-          <kbd className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-400">?</kbd>
+          <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-[11px] font-mono text-slate-600">?</kbd>
           <span>Shortcuts</span>
         </button>
       </div>
@@ -438,16 +438,16 @@ export default function WatchPage() {
       />
 
       {showShortcutsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-zinc-100 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Keyboard className="w-4 h-4 text-zinc-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl p-6 text-slate-900 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Keyboard className="w-4 h-4 text-slate-500" />
                 <span>Keyboard Shortcuts</span>
               </h3>
               <button
                 onClick={() => setShowShortcutsModal(false)}
-                className="text-zinc-500 hover:text-white transition-colors"
+                className="text-slate-400 hover:text-slate-900 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -455,27 +455,27 @@ export default function WatchPage() {
 
             <div className="space-y-2.5 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Notes</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-xs">1</kbd>
+                <span className="text-slate-600">Notes</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-xs">1</kbd>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Adaptive Tool</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-xs">2</kbd>
+                <span className="text-slate-600">Adaptive Tool</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-xs">2</kbd>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Quiz / AI Notes / Ask AI / Chapters</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-xs">3 – 6</kbd>
+                <span className="text-slate-600">Quiz / AI Notes / Ask AI / Chapters</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-xs">3 – 6</kbd>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Seek ±10s</span>
+                <span className="text-slate-600">Seek ±10s</span>
                 <div className="flex items-center gap-1 font-mono text-xs">
-                  <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800">J</kbd>
-                  <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800">L</kbd>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200">J</kbd>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200">L</kbd>
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Rate Video</span>
-                <kbd className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 font-mono text-xs">R</kbd>
+                <span className="text-slate-600">Rate Video</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-xs">R</kbd>
               </div>
             </div>
           </div>

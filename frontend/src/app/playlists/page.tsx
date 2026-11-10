@@ -114,14 +114,13 @@ export default function PlaylistsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-800 pb-5">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Learning Paths</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Learning Paths</h1>
 
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 text-sm font-semibold transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>New Playlist</span>
@@ -129,7 +128,7 @@ export default function PlaylistsPage() {
 
           <button
             onClick={() => setShowGenerateModal(true)}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors"
+            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors"
           >
             Generate AI Path
           </button>
@@ -137,14 +136,14 @@ export default function PlaylistsPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/80 pb-3 text-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3 text-sm">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('all')}
             className={`px-3.5 py-1.5 rounded-lg transition-colors ${
               activeTab === 'all'
-                ? 'bg-zinc-800 text-white font-semibold'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-slate-900 text-white font-semibold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
             All ({playlists.length})
@@ -153,8 +152,8 @@ export default function PlaylistsPage() {
             onClick={() => setActiveTab('ai')}
             className={`px-3.5 py-1.5 rounded-lg transition-colors ${
               activeTab === 'ai'
-                ? 'bg-zinc-800 text-white font-semibold'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-slate-900 text-white font-semibold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
             AI Paths ({playlists.filter(p => p.type === 'AI').length})
@@ -163,8 +162,8 @@ export default function PlaylistsPage() {
             onClick={() => setActiveTab('custom')}
             className={`px-3.5 py-1.5 rounded-lg transition-colors ${
               activeTab === 'custom'
-                ? 'bg-zinc-800 text-white font-semibold'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-slate-900 text-white font-semibold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
             Custom ({playlists.filter(p => p.type !== 'AI').length})
@@ -174,7 +173,7 @@ export default function PlaylistsPage() {
         <select
           value={selectedSubjectFilter}
           onChange={e => setSelectedSubjectFilter(e.target.value)}
-          className="bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-600"
+          className="bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-500"
         >
           <option value="all">All Subjects</option>
           {availableSubjects.map(sub => (
@@ -187,11 +186,11 @@ export default function PlaylistsPage() {
 
       {/* Playlists Grid */}
       {filteredPlaylists.length === 0 ? (
-        <div className="p-12 text-center bg-zinc-900/20 border border-zinc-800/60 rounded-2xl space-y-3">
-          <p className="text-base text-zinc-400">No playlists found for this subject.</p>
+        <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl space-y-3">
+          <p className="text-base text-slate-600">No playlists found for this subject.</p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="text-sm text-blue-400 hover:underline font-medium"
+            className="text-sm text-indigo-600 hover:underline font-medium"
           >
             + Create Playlist
           </button>
@@ -205,11 +204,11 @@ export default function PlaylistsPage() {
             return (
               <div
                 key={playlist.id}
-                className="p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors flex flex-col justify-between gap-4"
+                className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all flex flex-col justify-between gap-4"
               >
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-zinc-500">
-                    <span className="font-medium text-zinc-400">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span className="font-medium text-indigo-600">
                       {subject ? `${subject.name} · ` : ''}{topic?.name || 'Playlist'}
                     </span>
                     <span>
@@ -218,24 +217,24 @@ export default function PlaylistsPage() {
                   </div>
 
                   <Link href={`/playlists/${playlist.id}`}>
-                    <h2 className="text-lg font-bold text-white hover:text-blue-400 transition-colors">
+                    <h2 className="text-lg font-bold text-slate-900 hover:text-indigo-600 transition-colors">
                       {playlist.title}
                     </h2>
                   </Link>
 
-                  <p className="text-sm text-zinc-400 leading-relaxed line-clamp-2">
+                  <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">
                     {playlist.description}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-zinc-800/60 text-sm">
-                  <span className="text-zinc-400">
-                    <strong className="text-white">{playlist.ratingAverage}</strong> ★
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-sm">
+                  <span className="text-slate-600">
+                    <strong className="text-slate-900">{playlist.ratingAverage}</strong> ★
                   </span>
 
                   <Link
                     href={`/playlists/${playlist.id}`}
-                    className="font-semibold text-zinc-200 hover:text-white transition-colors"
+                    className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
                   >
                     Open →
                   </Link>
@@ -248,34 +247,34 @@ export default function PlaylistsPage() {
 
       {/* Modal: Create Custom Playlist */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-zinc-100 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white">Create Playlist</h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-zinc-500 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl p-6 text-slate-900 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-lg font-bold text-slate-900">Create Playlist</h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateCustomPlaylist} className="space-y-4 text-sm">
               <div>
-                <label className="block font-medium text-zinc-300 mb-1.5">Title</label>
+                <label className="block font-medium text-slate-700 mb-1.5">Title</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g., Class 12 Organic Chemistry..."
                   value={newTitle}
                   onChange={e => setNewTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-zinc-300 mb-1.5">Subject & Topic</label>
+                <label className="block font-medium text-slate-700 mb-1.5">Subject & Topic</label>
                 <select
                   value={newTopicId}
                   onChange={e => setNewTopicId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white focus:outline-none focus:border-zinc-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:bg-white focus:border-indigo-500"
                 >
                   {subjects.map(sub => {
                     const subTopics = topics.filter(t => t.subjectId === sub.id);
@@ -292,51 +291,51 @@ export default function PlaylistsPage() {
               </div>
 
               <div>
-                <label className="block font-medium text-zinc-300 mb-1.5">Description</label>
+                <label className="block font-medium text-slate-700 mb-1.5">Description</label>
                 <textarea
                   rows={2}
                   placeholder="Brief summary..."
                   value={newDesc}
                   onChange={e => setNewDesc(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 resize-none"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500 resize-none"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-zinc-300 mb-1.5">Videos (Optional)</label>
-                <div className="max-h-36 overflow-y-auto space-y-1 p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl">
+                <label className="block font-medium text-slate-700 mb-1.5">Videos (Optional)</label>
+                <div className="max-h-36 overflow-y-auto space-y-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
                   {videos.map(v => {
                     const checked = selectedVideoIds.includes(v.id);
                     return (
                       <label
                         key={v.id}
-                        className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-zinc-900 cursor-pointer text-xs"
+                        className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-white cursor-pointer text-xs"
                       >
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={() => toggleVideoSelection(v.id)}
-                          className="rounded border-zinc-700 bg-zinc-900 text-blue-500"
+                          className="rounded border-slate-300 text-indigo-600"
                         />
-                        <span className="text-zinc-300 truncate flex-1">{v.title}</span>
+                        <span className="text-slate-700 truncate flex-1">{v.title}</span>
                       </label>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-zinc-400 hover:text-white"
+                  className="px-4 py-2 text-slate-600 hover:text-slate-900"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating || !newTitle.trim()}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold disabled:opacity-50 transition-colors"
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold disabled:opacity-50 transition-colors"
                 >
                   {isCreating ? 'Creating...' : 'Create'}
                 </button>
@@ -348,16 +347,16 @@ export default function PlaylistsPage() {
 
       {/* Modal: AI Playlist Synthesis */}
       {showGenerateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-zinc-100 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-white">Generate AI Learning Path</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-6 text-slate-900 shadow-2xl space-y-4">
+            <h3 className="text-lg font-bold text-slate-900">Generate AI Learning Path</h3>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-zinc-300">Select Topic</label>
+              <label className="block text-sm font-medium text-slate-700">Select Topic</label>
               <select
                 value={selectedGenerateTopic}
                 onChange={e => setSelectedGenerateTopic(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white focus:outline-none focus:border-zinc-500"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:bg-white focus:border-indigo-500"
               >
                 {subjects.map(sub => {
                   const subTopics = topics.filter(t => t.subjectId === sub.id);
@@ -377,14 +376,14 @@ export default function PlaylistsPage() {
               <button
                 type="button"
                 onClick={() => setShowGenerateModal(false)}
-                className="px-4 py-2 text-sm text-zinc-400 hover:text-white"
+                className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
               >
                 Cancel
               </button>
               <button
                 onClick={handleGenerateAiPlaylist}
                 disabled={isGenerating}
-                className="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-500 disabled:opacity-50 transition-colors"
+                className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
               >
                 {isGenerating ? 'Generating...' : 'Generate'}
               </button>

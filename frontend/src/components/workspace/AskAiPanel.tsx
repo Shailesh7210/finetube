@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Send, Clock, Bookmark, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Send, Clock, Bookmark } from 'lucide-react';
 import { Video } from '@/lib/types';
 import { formatTimestamp } from '@/lib/utils';
 import { store } from '@/lib/store';
@@ -30,7 +30,7 @@ export function AskAiPanel({ video, onSeek }: AskAiPanelProps) {
     {
       id: 'welcome',
       sender: 'assistant',
-      text: `Ask any question about "${video.title}". Answers are strictly grounded in this lecture's chapters and verified concept coverage.`,
+      text: `Ask any question about "${video.title}".`,
       isCovered: true
     }
   ]);
@@ -38,48 +38,35 @@ export function AskAiPanel({ video, onSeek }: AskAiPanelProps) {
   const [loading, setLoading] = useState(false);
   const [savedMessageId, setSavedMessageId] = useState<string | null>(null);
 
-  // Suggested quick prompts dynamically generated based on video topic & concepts
   const suggestedPrompts = (() => {
     const tId = (video.primaryTopicId || '').toLowerCase();
     if (tId.includes('physics')) {
       return [
-        'How does Gauss’s Law determine the electric field here?',
-        'What are the boundary conditions and charge assumptions?',
-        'Can you summarize the core derivation step by step?'
+        'How does Gauss’s Law determine the electric field?',
+        'What are the boundary assumptions?'
       ];
     }
     if (tId.includes('chem')) {
       return [
-        'What governs the regioselectivity of this reaction mechanism?',
-        'How does carbocation stability influence product formation?',
-        'What are the key electrophile-nucleophile interactions?'
+        'What governs regioselectivity here?',
+        'How does carbocation stability apply?'
       ];
     }
     if (tId.includes('med') || tId.includes('bio')) {
       return [
-        'How is Cardiac Output regulated physiologically?',
-        'What compensatory mechanisms occur during acute changes?',
-        'What is the clinical significance of these findings?'
+        'How is Cardiac Output regulated?',
+        'What is the clinical significance?'
       ];
     }
     if (tId.includes('hist') || tId.includes('econ') || tId.includes('law')) {
       return [
-        'What underlying structural causes triggered this event?',
-        'How did key stakeholders and institutions respond?',
-        'What is the historical significance and long-term legacy?'
-      ];
-    }
-    if (tId === 'react_hooks') {
-      return [
-        'When does the cleanup function run?',
-        'How does the dependency array check equality?',
-        'What is the core takeaway of this video?'
+        'What structural causes triggered this?',
+        'What is the historical legacy?'
       ];
     }
     return [
-      `What are the foundational principles of ${video.title}?`,
-      'Can you explain the key concepts covered in this lecture?',
-      'What are the practical applications or exam takeaways?'
+      `Core takeaways of ${video.title}?`,
+      'Explain the key concept step by step.'
     ];
   })();
 
@@ -98,7 +85,6 @@ export function AskAiPanel({ video, onSeek }: AskAiPanelProps) {
     setLoading(true);
 
     try {
-      // Query backend API first
       const res = await fetch('http://localhost:5000/api/v1/ai/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,29 +105,23 @@ export function AskAiPanel({ video, onSeek }: AskAiPanelProps) {
         return;
       }
     } catch {
-      // Offline fallback: intelligent local matching
+      // fallback
     }
 
-    // Client-side fallback adhering to Blueprint Section 13.2
     const lower = q.toLowerCase();
-    let answer = `This concept is discussed in detail across the chapters. The instructor focuses on pedagogical clarity and implementation.`;
+    let answer = `This concept is covered across the lecture chapters with focus on clarity and core principles.`;
     let citations: Citation[] = [];
     let isCovered = true;
 
     if (lower.includes('cleanup') || lower.includes('unmount')) {
-      answer = 'The cleanup function executes before re-running the effect with new dependencies, and also when the component unmounts. This prevents memory leaks and stale event listeners.';
+      answer = 'The cleanup function executes before re-running the effect with new dependencies and when unmounting.';
       citations = [{ timestampSeconds: 540, chapterTitle: 'Cleanup functions' }];
     } else if (lower.includes('dependency') || lower.includes('array')) {
-      answer = 'React performs an Object.is shallow comparison between consecutive renders. If any dependency changes, the effect is triggered. Passing [] runs the effect once after initial mount.';
+      answer = 'React uses Object.is shallow comparison between renders to determine if effects should re-run.';
       citations = [{ timestampSeconds: 310, chapterTitle: 'Dependency array' }];
-    } else if (lower.includes('delete') || lower.includes('remove')) {
-      answer = 'BST deletion handles three cases: 1) Leaf node (direct removal), 2) Node with 1 child (bypass to child), and 3) Node with 2 children (replace with in-order successor).';
-      citations = [{ timestampSeconds: 980, chapterTitle: 'Tree Removal' }];
-    } else if (lower.includes('complexity') || lower.includes('o(n)')) {
-      answer = 'Average time complexity is O(log n) for balanced trees. Worst-case is O(n) for degenerate tree structures.';
-      citations = [{ timestampSeconds: 650, chapterTitle: 'Complexity Analysis' }];
+    } else if (video.chapters && video.chapters.length > 0) {
+      citations = [{ timestampSeconds: video.chapters[0].start, chapterTitle: video.chapters[0].title }];
     } else {
-      answer = `The lecture does not directly provide evidence for "${q}". FineTube prevents hallucinations by acknowledging boundaries.`;
       isCovered = false;
     }
 
@@ -168,10 +148,8 @@ export function AskAiPanel({ video, onSeek }: AskAiPanelProps) {
         videoId: video.id,
         timestampSeconds: msg.citations?.[0]?.timestampSeconds
       },
-      content: {
-        text: msg.text
-      },
-      tags: ['ask-ai', 'grounded']
+      content: { text: msg.text },
+      tags: ['ask-ai']
     });
     setSavedMessageId(msg.id);
     setTimeout(() => setSavedMessageId(null), 2000);
@@ -179,104 +157,91 @@ export function AskAiPanel({ video, onSeek }: AskAiPanelProps) {
 
   return (
     <div className="flex flex-col h-full space-y-3">
-      {/* Header Badge */}
-      <div className="flex items-center justify-between pb-2 border-b border-zinc-800 text-xs">
-        <span className="font-semibold text-zinc-300 flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> Grounded Assistant
-        </span>
-        <span className="text-[10px] text-zinc-500 font-mono">
-          Strict Evidence Only
-        </span>
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 text-xs">
+        <span className="font-semibold text-slate-900">Ask AI</span>
+        <span className="text-slate-500">Video-grounded</span>
       </div>
 
-      {/* Suggested chips */}
-      <div className="flex flex-wrap gap-1.5 pt-1">
+      <div className="flex flex-wrap gap-1.5">
         {suggestedPrompts.map((prompt, i) => (
           <button
             key={i}
             onClick={() => handleAsk(prompt)}
-            className="text-[11px] px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white transition-colors text-left"
+            className="text-xs px-3 py-1 rounded-full bg-slate-100 border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 transition-colors text-left"
           >
             {prompt}
           </button>
         ))}
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-sm">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`p-3 rounded-lg border ${
+            className={`p-3.5 rounded-xl border ${
               msg.sender === 'user'
-                ? 'bg-zinc-800/60 border-zinc-700 text-zinc-200 ml-6'
-                : 'bg-zinc-900/60 border-zinc-800 text-zinc-300 mr-2 space-y-2'
+                ? 'bg-indigo-50 border-indigo-200 text-slate-900 ml-6'
+                : 'bg-slate-50 border-slate-200 text-slate-800 mr-2 space-y-2'
             }`}
           >
             <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
 
-            {/* Citations */}
             {msg.citations && msg.citations.length > 0 && (
-              <div className="pt-2 border-t border-zinc-800/80 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] text-zinc-500">Video Evidence:</span>
+              <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center gap-2">
                 {msg.citations.map((c, idx) => (
                   <button
                     key={idx}
                     onClick={() => onSeek(c.timestampSeconds)}
-                    className="inline-flex items-center gap-1 text-[11px] font-mono text-indigo-400 hover:text-indigo-300 bg-indigo-950/40 border border-indigo-900/50 px-2 py-0.5 rounded transition-colors"
-                    title="Seek video to this explanation"
+                    className="inline-flex items-center gap-1 text-xs font-mono text-indigo-700 hover:text-indigo-900 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-lg transition-colors"
                   >
                     <Clock className="w-3 h-3" />
                     <span>{formatTimestamp(c.timestampSeconds)}</span>
-                    {c.chapterTitle && <span className="text-[10px] text-zinc-400">({c.chapterTitle})</span>}
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Save to library action */}
             {msg.sender === 'assistant' && msg.id !== 'welcome' && (
               <div className="flex justify-end pt-1">
                 <button
                   onClick={() => handleSaveToNotes(msg)}
-                  className="text-[11px] text-zinc-500 hover:text-zinc-300 inline-flex items-center gap-1"
+                  className="text-xs text-slate-500 hover:text-slate-900 inline-flex items-center gap-1"
                 >
                   <Bookmark className="w-3 h-3" />
-                  <span>{savedMessageId === msg.id ? 'Saved in Library' : 'Save to Notes'}</span>
+                  <span>{savedMessageId === msg.id ? 'Saved' : 'Save'}</span>
                 </button>
               </div>
             )}
           </div>
         ))}
         {loading && (
-          <div className="p-3 bg-zinc-900/40 border border-zinc-800 rounded-lg text-xs text-zinc-500 animate-pulse">
-            Analyzing video transcript & evidence...
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 animate-pulse">
+            Analyzing lecture evidence...
           </div>
         )}
       </div>
 
-      {/* Input Form */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           handleAsk(input);
         }}
-        className="flex items-center gap-2 pt-2 border-t border-zinc-800"
+        className="flex items-center gap-2 pt-2 border-t border-slate-200"
       >
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask a question about this video..."
-          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-700"
+          placeholder="Ask about this video..."
+          className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
         />
         <button
           type="submit"
           disabled={!input.trim() || loading}
-          className="p-2 rounded-md bg-white text-zinc-950 hover:bg-zinc-100 disabled:opacity-40 transition-colors"
+          className="p-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-40 transition-colors"
           title="Send"
         >
-          <Send className="w-3.5 h-3.5" />
+          <Send className="w-4 h-4" />
         </button>
       </form>
     </div>

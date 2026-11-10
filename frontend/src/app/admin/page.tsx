@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { ShieldCheck, Check, Clock, AlertTriangle, ArrowLeft, Activity, Database, Cpu, Radio, Server, Flag, RefreshCw } from 'lucide-react';
+import { Check, Flag, RefreshCw, Database } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export default function AdminOperationsPage() {
@@ -28,26 +27,8 @@ export default function AdminOperationsPage() {
         api.getAdminReports(),
         api.getAdminBackups()
       ]);
-      setReviewQueue(q.length > 0 ? q : [
-        {
-          id: 'rev_sample',
-          videoId: 'vid_unconfirmed_sample',
-          title: 'Advanced React State Patterns & Concurrent Rendering',
-          detectedTopic: 'React Hooks',
-          confidence: 0.68,
-          reason: 'Low confidence mapping between Concurrent Mode and standard useEffect lifecycle',
-          status: 'pending_review'
-        }
-      ]);
-      setJobs(j.length > 0 ? j : [
-        {
-          jobId: 'job_sample_1',
-          videoId: 'vid_0ZJgIjIuY7U',
-          status: 'COMPLETED',
-          progress: 100,
-          createdAt: new Date(Date.now() - 3600000).toISOString()
-        }
-      ]);
+      setReviewQueue(q.length > 0 ? q : []);
+      setJobs(j.length > 0 ? j : []);
       setMetrics(m);
       setHealth(h);
       setTelemetryEvents(t);
@@ -66,7 +47,7 @@ export default function AdminOperationsPage() {
     setIsBackingUp(true);
     try {
       await api.createAdminBackup();
-      setBackupNotice('Automated database snapshot generated with SHA256 checksum.');
+      setBackupNotice('Snapshot created.');
       const updated = await api.getAdminBackups();
       setBackups(updated);
       setTimeout(() => setBackupNotice(null), 3000);
@@ -76,12 +57,12 @@ export default function AdminOperationsPage() {
   };
 
   const handleRestoreBackup = async (fileName: string) => {
-    if (!window.confirm(`Restore database from snapshot "${fileName}"? This will atomically replace current in-memory collections.`)) {
+    if (!window.confirm(`Restore database from "${fileName}"?`)) {
       return;
     }
     const ok = await api.restoreAdminBackup(fileName);
     if (ok) {
-      setBackupNotice(`Database successfully restored from ${fileName}`);
+      setBackupNotice(`Restored from ${fileName}`);
       setTimeout(() => setBackupNotice(null), 3000);
     }
   };
@@ -91,172 +72,68 @@ export default function AdminOperationsPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
-      {/* Header */}
-      <div className="border-b border-zinc-800 pb-5">
-        <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
-          <span>Blueprint §14.7 & §16</span>
-          <span>•</span>
-          <span>Curator & Observability Console</span>
-        </div>
-        <h1 className="text-xl font-bold text-white tracking-tight">Content Operations & System Health</h1>
-        <p className="text-xs text-zinc-400 mt-1">
-          Monitor <strong>curriculum metrics</strong>, inspect <strong>low-confidence topic classifications</strong>, and track <strong>asynchronous ingestion jobs</strong>.
-        </p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
+      <div className="border-b border-slate-200 pb-5">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Operations &amp; Moderation</h1>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-zinc-800/80 pb-2 text-xs">
-        <button
-          onClick={() => setActiveTab('metrics')}
-          className={`px-3 py-1 rounded-md transition-colors ${
-            activeTab === 'metrics'
-              ? 'bg-zinc-800 text-white font-semibold'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          Observability & Metrics
-        </button>
-        <button
-          onClick={() => setActiveTab('queue')}
-          className={`px-3 py-1 rounded-md transition-colors ${
-            activeTab === 'queue'
-              ? 'bg-zinc-800 text-white font-semibold'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          Review Queue ({reviewQueue.filter(r => r.status === 'pending_review').length})
-        </button>
-        <button
-          onClick={() => setActiveTab('jobs')}
-          className={`px-3 py-1 rounded-md transition-colors ${
-            activeTab === 'jobs'
-              ? 'bg-zinc-800 text-white font-semibold'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          Job Monitor ({jobs.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('telemetry')}
-          className={`px-3 py-1 rounded-md transition-colors ${
-            activeTab === 'telemetry'
-              ? 'bg-zinc-800 text-white font-semibold'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          Pilot Telemetry ({telemetryEvents.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('reports')}
-          className={`px-3 py-1 rounded-md transition-colors ${
-            activeTab === 'reports'
-              ? 'bg-zinc-800 text-white font-semibold'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          User Reports ({reports.filter(r => r.status === 'pending').length})
-        </button>
-        <button
-          onClick={() => setActiveTab('backups')}
-          className={`px-3 py-1 rounded-md transition-colors ${
-            activeTab === 'backups'
-              ? 'bg-zinc-800 text-white font-semibold'
-              : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          Disaster Recovery ({backups.length})
-        </button>
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-sm overflow-x-auto">
+        {[
+          { id: 'metrics', label: 'Metrics' },
+          { id: 'queue', label: `Review Queue (${reviewQueue.filter(r => r.status === 'pending_review').length})` },
+          { id: 'jobs', label: `Jobs (${jobs.length})` },
+          { id: 'telemetry', label: `Telemetry (${telemetryEvents.length})` },
+          { id: 'reports', label: `Reports (${reports.filter(r => r.status === 'pending').length})` },
+          { id: 'backups', label: `Backups (${backups.length})` }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-3.5 py-1.5 rounded-lg transition-colors shrink-0 ${
+              activeTab === tab.id
+                ? 'bg-slate-900 text-white font-semibold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {activeTab === 'metrics' && (
         <div className="space-y-6">
-          {/* Key Metrics Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 space-y-1">
-              <span className="text-xs text-zinc-400">Indexed Lectures</span>
-              <p className="text-2xl font-bold text-white">{metrics?.totalVideos ?? 12}</p>
-              <span className="text-[10px] text-zinc-500 font-mono">100% video-topic mapped</span>
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+              <span className="text-xs text-slate-500">Videos</span>
+              <p className="text-2xl font-bold text-slate-900">{metrics?.totalVideos ?? 0}</p>
             </div>
-
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 space-y-1">
-              <span className="text-xs text-zinc-400">Curriculum Topics</span>
-              <p className="text-2xl font-bold text-white">{metrics?.totalTopics ?? 4}</p>
-              <span className="text-[10px] text-zinc-500 font-mono">Concept checklists active</span>
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+              <span className="text-xs text-slate-500">Topics</span>
+              <p className="text-2xl font-bold text-slate-900">{metrics?.totalTopics ?? 0}</p>
             </div>
-
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 space-y-1">
-              <span className="text-xs text-zinc-400">Average Bayesian Rating</span>
-              <p className="text-2xl font-bold text-amber-400">{metrics?.averageCurriculumRating ?? 4.88} ★</p>
-              <span className="text-[10px] text-zinc-500 font-mono">{metrics?.totalCommunityRatings ?? 98} community ratings</span>
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+              <span className="text-xs text-slate-500">Avg Rating</span>
+              <p className="text-2xl font-bold text-amber-600">{metrics?.averageCurriculumRating ?? 4.88} ★</p>
             </div>
-
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 space-y-1">
-              <span className="text-xs text-zinc-400">System Status</span>
-              <p className="text-2xl font-bold text-emerald-400">{metrics?.feedHealthStatus ?? 'HEALTHY'}</p>
-              <span className="text-[10px] text-zinc-500 font-mono">P95: {metrics?.observability?.p95LatencyMs ?? 38}ms</span>
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+              <span className="text-xs text-slate-500">Status</span>
+              <p className="text-2xl font-bold text-emerald-600">{metrics?.feedHealthStatus ?? 'HEALTHY'}</p>
             </div>
           </div>
 
-          {/* Operational Performance & Telemetry */}
-          <div className="p-5 rounded-xl bg-zinc-900/30 border border-zinc-800 space-y-4">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Activity className="w-4 h-4 text-indigo-400" />
-              <span>Platform Observability (Blueprint §14.7)</span>
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 space-y-1">
-                <span className="text-zinc-500 font-mono uppercase text-[10px]">API Availability</span>
-                <p className="font-bold text-zinc-200">99.98% uptime</p>
-                <p className="text-[11px] text-zinc-400">Zero unhandled 5xx exceptions across routes.</p>
-              </div>
-
-              <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 space-y-1">
-                <span className="text-zinc-500 font-mono uppercase text-[10px]">Topic Cache Hit Ratio</span>
-                <p className="font-bold text-zinc-200">94.2% hit rate</p>
-                <p className="text-[11px] text-zinc-400">Ranking aggregates served from precomputed cache.</p>
-              </div>
-
-              <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 space-y-1">
-                <span className="text-zinc-500 font-mono uppercase text-[10px]">AI Grounding Accuracy</span>
-                <p className="font-bold text-zinc-200">100% Citation Validity</p>
-                <p className="text-[11px] text-zinc-400">All answered questions verified against video chapters.</p>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-1">
+              <span className="text-slate-500 text-xs uppercase font-mono">API Availability</span>
+              <p className="font-bold text-slate-900">99.98% uptime</p>
             </div>
-          </div>
-
-          {/* Unit Economics & Cost Model (Blueprint §20.1) */}
-          <div className="p-5 rounded-xl bg-zinc-900/30 border border-zinc-800 space-y-4">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-amber-400" />
-              <span>Unit Economics & Budget Health (Blueprint §20.1)</span>
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 space-y-1">
-                <span className="text-zinc-500 font-mono uppercase text-[10px]">Estimated Daily Spend</span>
-                <p className="font-bold text-amber-400 text-base">
-                  ${metrics?.unitEconomics?.estimatedDailySpendUSD ?? '0.0480'}
-                </p>
-                <p className="text-[11px] text-zinc-400">Total metered variable LLM + sandbox compute.</p>
-              </div>
-
-              <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 space-y-1">
-                <span className="text-zinc-500 font-mono uppercase text-[10px]">Cost Per Active Learner</span>
-                <p className="font-bold text-emerald-400 text-base">
-                  ${metrics?.unitEconomics?.averageCostPerActiveLearnerUSD ?? '0.0240'} / day
-                </p>
-                <p className="text-[11px] text-zinc-400">Under the $0.15/learner budget threshold.</p>
-              </div>
-
-              <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 space-y-1">
-                <span className="text-zinc-500 font-mono uppercase text-[10px]">Tokens Metered</span>
-                <p className="font-bold text-zinc-200 text-base">
-                  {metrics?.unitEconomics?.totalTokensMetered ?? 3200} tokens
-                </p>
-                <p className="text-[11px] text-zinc-400">Strict per-user daily token bounds enforced.</p>
-              </div>
+            <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-1">
+              <span className="text-slate-500 text-xs uppercase font-mono">Daily Spend</span>
+              <p className="font-bold text-slate-900">${metrics?.unitEconomics?.estimatedDailySpendUSD ?? '0.0480'}</p>
+            </div>
+            <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-1">
+              <span className="text-slate-500 text-xs uppercase font-mono">Cost / Learner</span>
+              <p className="font-bold text-emerald-600">${metrics?.unitEconomics?.averageCostPerActiveLearnerUSD ?? '0.0240'} / day</p>
             </div>
           </div>
         </div>
@@ -267,19 +144,17 @@ export default function AdminOperationsPage() {
           {reviewQueue.map(item => (
             <div
               key={item.id}
-              className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              className="p-5 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
             >
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="font-semibold text-white">{item.title}</span>
-                  <span className={`px-1.5 py-0.5 rounded font-mono text-[10px] ${
-                    item.confidence < 0.75 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-zinc-800 text-zinc-400'
-                  }`}>
-                    Confidence: <strong>{Math.round(item.confidence * 100)}%</strong>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-semibold text-slate-900">{item.title}</span>
+                  <span className="px-2 py-0.5 rounded-lg font-mono text-xs bg-amber-50 text-amber-700 border border-amber-200">
+                    {Math.round(item.confidence * 100)}%
                   </span>
                 </div>
-                <p className="text-xs text-zinc-400">
-                  Target Topic: <strong className="text-zinc-200">{item.detectedTopic}</strong> • Flag: {item.reason}
+                <p className="text-xs text-slate-600">
+                  Topic: <strong>{item.detectedTopic}</strong> · {item.reason}
                 </p>
               </div>
 
@@ -288,19 +163,19 @@ export default function AdminOperationsPage() {
                   <>
                     <button
                       onClick={() => handleResolveReview(item.id, 'approved')}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-600/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/20 text-xs font-semibold transition-colors"
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold transition-colors"
                     >
-                      Confirm Mapping
+                      Approve
                     </button>
                     <button
                       onClick={() => handleResolveReview(item.id, 'rejected')}
-                      className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 transition-colors"
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs text-slate-700 transition-colors"
                     >
                       Re-evaluate
                     </button>
                   </>
                 ) : (
-                  <span className="text-xs font-mono font-semibold text-emerald-400 uppercase">
+                  <span className="text-xs font-mono font-semibold text-emerald-700 uppercase">
                     {item.status}
                   </span>
                 )}
@@ -315,233 +190,165 @@ export default function AdminOperationsPage() {
           {jobs.map(job => (
             <div
               key={job.jobId}
-              className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 flex items-center justify-between gap-4"
+              className="p-5 rounded-2xl bg-white border border-slate-200 flex items-center justify-between gap-4"
             >
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="font-mono text-zinc-400">{job.jobId}</span>
-                  <span className="font-semibold text-white">{job.videoId || 'Video Processing'}</span>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-mono text-slate-500">{job.jobId}</span>
+                  <span className="font-semibold text-slate-900">{job.videoId || 'Video Job'}</span>
                 </div>
-                <p className="text-xs text-zinc-500">
-                  Created at {new Date(job.createdAt).toLocaleTimeString()}
+                <p className="text-xs text-slate-500">
+                  {new Date(job.createdAt).toLocaleTimeString()}
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <span className={`px-2 py-0.5 rounded text-xs font-mono font-semibold ${
-                  job.status === 'COMPLETED'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
-                }`}>
-                  {job.status} ({job.progress}%)
-                </span>
-              </div>
+              <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {job.status} ({job.progress}%)
+              </span>
             </div>
           ))}
         </div>
       )}
 
       {activeTab === 'telemetry' && (
-        <div className="space-y-6">
-          {/* Health & Container Runtime Cards */}
+        <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 space-y-1">
-              <span className="text-xs text-zinc-400 flex items-center gap-1.5">
-                <Server className="w-3.5 h-3.5 text-blue-400" />
-                Backend Health (Blueprint §19.3)
-              </span>
-              <p className="text-lg font-bold text-white capitalize">{health?.status || 'Healthy'}</p>
-              <span className="text-[10px] text-zinc-500 font-mono">
-                Uptime: {health?.uptimeSeconds ? `${health.uptimeSeconds}s` : 'Active'} • Version: {health?.version || '1.0.0'}
-              </span>
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-1">
+              <span className="text-xs text-slate-500">Backend Status</span>
+              <p className="text-lg font-bold text-slate-900 capitalize">{health?.status || 'Healthy'}</p>
             </div>
-
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 space-y-1">
-              <span className="text-xs text-zinc-400 flex items-center gap-1.5">
-                <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-                Memory Footprint
-              </span>
-              <p className="text-lg font-bold text-white">
-                {health?.memory?.heapUsedMb ? `${health.memory.heapUsedMb} MB Heap` : '42 MB Heap'}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-1">
+              <span className="text-xs text-slate-500">Heap Memory</span>
+              <p className="text-lg font-bold text-slate-900">
+                {health?.memory?.heapUsedMb ? `${health.memory.heapUsedMb} MB` : '42 MB'}
               </p>
-              <span className="text-[10px] text-zinc-500 font-mono">
-                RSS: {health?.memory?.rssMb ? `${health.memory.rssMb} MB` : '78 MB'}
-              </span>
             </div>
-
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 space-y-1">
-              <span className="text-xs text-zinc-400 flex items-center gap-1.5">
-                <Radio className="w-3.5 h-3.5 text-purple-400" />
-                Total Telemetry Events
-              </span>
-              <p className="text-lg font-bold text-white">{telemetryEvents.length}</p>
-              <span className="text-[10px] text-zinc-500 font-mono">Non-blocking buffered stream</span>
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-1">
+              <span className="text-xs text-slate-500">Events</span>
+              <p className="text-lg font-bold text-slate-900">{telemetryEvents.length}</p>
             </div>
           </div>
 
-          {/* Telemetry Stream */}
-          <div className="p-5 rounded-xl bg-zinc-900/30 border border-zinc-800 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Radio className="w-4 h-4 text-purple-400" />
-                <span>Live Event Stream (Blueprint §22.2)</span>
-              </h3>
-              <span className="text-[10px] text-zinc-500 font-mono">Last 50 events</span>
-            </div>
-
-            <div className="space-y-2">
-              {telemetryEvents.length === 0 ? (
-                <p className="text-xs text-zinc-500 py-4 text-center">No telemetry events captured yet.</p>
-              ) : (
-                telemetryEvents.map((evt, idx) => (
-                  <div
-                    key={evt.id || idx}
-                    className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-zinc-800 text-zinc-300">
-                        {evt.eventName}
-                      </span>
-                      <span className="font-mono text-zinc-400 text-[11px]">
-                        {JSON.stringify(evt.properties || {})}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-zinc-500 font-mono shrink-0">
-                      {new Date(evt.timestamp || Date.now()).toLocaleTimeString()}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2">
+            {telemetryEvents.length === 0 ? (
+              <p className="text-sm text-slate-500 py-4 text-center">No telemetry events yet.</p>
+            ) : (
+              telemetryEvents.map((evt, idx) => (
+                <div
+                  key={evt.id || idx}
+                  className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-2 text-xs"
+                >
+                  <div className="flex items-center gap-2.5 truncate">
+                    <span className="px-2 py-0.5 rounded font-mono font-bold bg-white border border-slate-200 text-slate-800">
+                      {evt.eventName}
+                    </span>
+                    <span className="font-mono text-slate-500 truncate">
+                      {JSON.stringify(evt.properties || {})}
                     </span>
                   </div>
-                ))
-              )}
-            </div>
+                  <span className="text-slate-400 font-mono shrink-0">
+                    {new Date(evt.timestamp || Date.now()).toLocaleTimeString()}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
 
       {activeTab === 'reports' && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Flag className="w-4 h-4 text-amber-400" />
-              <span className="text-sm font-semibold text-white">Community Inaccuracy & Moderation Queue</span>
-            </div>
-            <span className="text-xs font-mono text-zinc-400">
-              {reports.filter(r => r.status === 'pending').length} pending review
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {reports.length === 0 ? (
-              <p className="text-xs text-zinc-500 py-8 text-center">No community reports submitted.</p>
-            ) : (
-              reports.map(rep => (
-                <div
-                  key={rep.id}
-                  className="p-4 rounded-xl bg-zinc-900/30 border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="px-1.5 py-0.5 rounded font-mono text-[10px] uppercase font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                        {rep.reason.replace('_', ' ')}
-                      </span>
-                      <span className="text-zinc-500 font-mono text-[11px]">{rep.targetId}</span>
-                      <span className="text-[10px] text-zinc-500">
-                        {new Date(rep.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-xs text-zinc-300">
-                      {rep.details || 'No additional explanation provided.'}
-                    </p>
+        <div className="space-y-3">
+          {reports.length === 0 ? (
+            <p className="text-sm text-slate-500 py-8 text-center bg-white border border-slate-200 rounded-2xl">No user reports.</p>
+          ) : (
+            reports.map(rep => (
+              <div
+                key={rep.id}
+                className="p-5 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Flag className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="font-mono font-bold text-amber-700 uppercase">
+                      {rep.reason.replace('_', ' ')}
+                    </span>
+                    <span className="text-slate-500 font-mono">{rep.targetId}</span>
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {rep.status === 'pending' ? (
-                      <>
-                        <button
-                          onClick={() => handleResolveReport(rep.id, 'resolved')}
-                          className="px-2.5 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-colors flex items-center gap-1"
-                        >
-                          <Check className="w-3.5 h-3.5" /> Resolve
-                        </button>
-                        <button
-                          onClick={() => handleResolveReport(rep.id, 'dismissed')}
-                          className="px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-xs transition-colors"
-                        >
-                          Dismiss
-                        </button>
-                      </>
-                    ) : (
-                      <span className="text-xs font-mono font-semibold text-zinc-500 uppercase">
-                        {rep.status}
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-sm text-slate-700">{rep.details || 'No details.'}</p>
                 </div>
-              ))
-            )}
-          </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {rep.status === 'pending' ? (
+                    <>
+                      <button
+                        onClick={() => handleResolveReport(rep.id, 'resolved')}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-1"
+                      >
+                        <Check className="w-3.5 h-3.5" /> Resolve
+                      </button>
+                      <button
+                        onClick={() => handleResolveReport(rep.id, 'dismissed')}
+                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs"
+                      >
+                        Dismiss
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-xs font-mono font-semibold text-slate-500 uppercase">
+                      {rep.status}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 
-      {/* Blueprint Section 19.3 & 25: Disaster Recovery & Automated Backups */}
       {activeTab === 'backups' && (
         <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Database className="w-4 h-4 text-emerald-400" />
-                <span className="text-sm font-semibold text-white">Automated Database Backups & Recovery</span>
-              </div>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Point-in-time state snapshots with <strong>SHA256 checksums</strong> for instant atomic recovery.
-              </p>
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-base font-bold text-slate-900">
+              <Database className="w-4 h-4 text-emerald-600" />
+              <span>Database Backups</span>
             </div>
-
             <button
               onClick={handleCreateBackup}
               disabled={isBackingUp}
-              className="px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isBackingUp ? 'animate-spin' : ''}`} />
-              <span>{isBackingUp ? 'Snapshotting...' : 'Create Snapshot'}</span>
+              <RefreshCw className={`w-4 h-4 ${isBackingUp ? 'animate-spin' : ''}`} />
+              <span>{isBackingUp ? 'Creating...' : 'Create Snapshot'}</span>
             </button>
           </div>
 
           {backupNotice && (
-            <div className="p-3 bg-emerald-950/40 border border-emerald-900/60 rounded-lg text-xs text-emerald-300">
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800">
               {backupNotice}
             </div>
           )}
 
           <div className="space-y-3">
-            {backups.length === 0 ? (
-              <p className="text-xs text-zinc-500 py-8 text-center">No snapshots stored yet. Click "Create Snapshot" to generate one.</p>
-            ) : (
-              backups.map(bak => (
-                <div
-                  key={bak.id}
-                  className="p-4 rounded-xl bg-zinc-900/30 border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="font-mono font-semibold text-white">{bak.fileName}</span>
-                      <span className="text-[10px] text-zinc-500 font-mono">
-                        {(bak.sizeBytes / 1024).toFixed(1)} KB
-                      </span>
-                    </div>
-                    <p className="text-xs text-zinc-400">
-                      Created: {new Date(bak.createdAt).toLocaleString()} • Checksum: <span className="font-mono text-[11px] text-zinc-300">{bak.checksum?.substring(0, 12)}...</span>
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => handleRestoreBackup(bak.fileName)}
-                    className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition-colors shrink-0"
-                  >
-                    Restore State
-                  </button>
+            {backups.map(bak => (
+              <div
+                key={bak.id}
+                className="p-5 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="space-y-1">
+                  <span className="font-mono font-semibold text-sm text-slate-900">{bak.fileName}</span>
+                  <p className="text-xs text-slate-500">
+                    {new Date(bak.createdAt).toLocaleString()} · {(bak.sizeBytes / 1024).toFixed(1)} KB
+                  </p>
                 </div>
-              ))
-            )}
+
+                <button
+                  onClick={() => handleRestoreBackup(bak.fileName)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold shrink-0"
+                >
+                  Restore
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}

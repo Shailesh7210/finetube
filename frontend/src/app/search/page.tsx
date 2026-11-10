@@ -105,23 +105,21 @@ function SearchContent() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
-      {/* Large Search Bar */}
       <div className="space-y-4">
         <div className="relative max-w-3xl">
-          <Search className="w-5 h-5 text-zinc-500 absolute left-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search any subject, topic, or chapter..."
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl pl-12 pr-12 py-3.5 text-base text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
+            className="w-full bg-white border border-slate-300 rounded-2xl pl-12 pr-12 py-3.5 text-base text-slate-900 placeholder-slate-400 shadow-xs focus:outline-none focus:border-indigo-500 transition-colors"
           />
           {isLoading && (
-            <Loader2 className="w-5 h-5 text-zinc-400 animate-spin absolute right-4 top-1/2 -translate-y-1/2" />
+            <Loader2 className="w-5 h-5 text-indigo-600 animate-spin absolute right-4 top-1/2 -translate-y-1/2" />
           )}
         </div>
 
-        {/* Context & Add-to-Interests Row */}
         {q && (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -130,8 +128,8 @@ function SearchContent() {
                   onClick={() => setPrioritizeContext(!prioritizeContext)}
                   className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     prioritizeContext
-                      ? 'bg-blue-950/60 border border-blue-800/60 text-blue-300'
-                      : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
+                      ? 'bg-indigo-50 border border-indigo-200 text-indigo-700'
+                      : 'bg-white border border-slate-300 text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {prioritizeContext ? `Level: ${userEducationLevel}` : 'All Levels'}
@@ -144,8 +142,8 @@ function SearchContent() {
               disabled={isAlreadyInInterests}
               className={`px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-1.5 transition-colors ${
                 isAlreadyInInterests
-                  ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-900/60 cursor-default'
-                  : 'bg-zinc-100 hover:bg-white text-zinc-950'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
+                  : 'bg-slate-900 hover:bg-slate-800 text-white'
               }`}
             >
               {isAlreadyInInterests ? (
@@ -164,21 +162,20 @@ function SearchContent() {
         )}
 
         {addedInterestNotice && (
-          <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-900/60 text-sm text-emerald-300 flex items-center justify-between">
+          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-800 flex items-center justify-between">
             <span>Added <strong>&ldquo;{query.trim()}&rdquo;</strong> to your interests.</span>
-            <Link href="/feed" className="underline font-semibold hover:text-white">
+            <Link href="/feed" className="underline font-semibold hover:text-emerald-950">
               Go to Feed →
             </Link>
           </div>
         )}
 
-        {/* Filter Tabs */}
         {q && (
-          <div className="flex items-center gap-2 text-sm border-b border-zinc-800 pb-3 overflow-x-auto">
+          <div className="flex items-center gap-2 text-sm border-b border-slate-200 pb-3 overflow-x-auto">
             <button
               onClick={() => setActiveFilter('all')}
               className={`px-4 py-1.5 rounded-lg transition-colors shrink-0 ${
-                activeFilter === 'all' ? 'bg-zinc-800 text-white font-semibold' : 'text-zinc-400 hover:text-zinc-200'
+                activeFilter === 'all' ? 'bg-slate-900 text-white font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               All ({totalResults})
@@ -186,7 +183,7 @@ function SearchContent() {
             <button
               onClick={() => setActiveFilter('videos')}
               className={`px-4 py-1.5 rounded-lg transition-colors shrink-0 ${
-                activeFilter === 'videos' ? 'bg-zinc-800 text-white font-semibold' : 'text-zinc-400 hover:text-zinc-200'
+                activeFilter === 'videos' ? 'bg-slate-900 text-white font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               Videos ({discoveredVideos.length})
@@ -194,7 +191,7 @@ function SearchContent() {
             <button
               onClick={() => setActiveFilter('topics')}
               className={`px-4 py-1.5 rounded-lg transition-colors shrink-0 ${
-                activeFilter === 'topics' ? 'bg-zinc-800 text-white font-semibold' : 'text-zinc-400 hover:text-zinc-200'
+                activeFilter === 'topics' ? 'bg-slate-900 text-white font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               Topics ({matchedTopics.length})
@@ -202,7 +199,7 @@ function SearchContent() {
             <button
               onClick={() => setActiveFilter('playlists')}
               className={`px-4 py-1.5 rounded-lg transition-colors shrink-0 ${
-                activeFilter === 'playlists' ? 'bg-zinc-800 text-white font-semibold' : 'text-zinc-400 hover:text-zinc-200'
+                activeFilter === 'playlists' ? 'bg-slate-900 text-white font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               Playlists ({matchedPlaylists.length})
@@ -213,7 +210,7 @@ function SearchContent() {
 
       {!q ? (
         <div className="py-16 text-center space-y-5">
-          <h2 className="text-2xl font-bold text-white">Search Any Educational Topic</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Search Any Educational Topic</h2>
           <div className="flex flex-wrap justify-center gap-2.5 max-w-2xl mx-auto">
             {[
               'Class 12 Physics Electrostatics',
@@ -227,7 +224,7 @@ function SearchContent() {
               <button
                 key={suggestion}
                 onClick={() => setQuery(suggestion)}
-                className="px-4 py-2 rounded-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-sm text-zinc-300 hover:text-white transition-colors"
+                className="px-4 py-2 rounded-full bg-white border border-slate-200 hover:border-indigo-300 text-sm text-slate-700 hover:text-indigo-600 shadow-xs transition-colors"
               >
                 {suggestion}
               </button>
@@ -235,14 +232,14 @@ function SearchContent() {
           </div>
         </div>
       ) : totalResults === 0 && !isLoading ? (
-        <div className="py-14 text-center text-sm text-zinc-500 border border-dashed border-zinc-800 rounded-2xl">
+        <div className="py-14 text-center text-sm text-slate-500 border border-dashed border-slate-300 rounded-2xl bg-white">
           No results found for &ldquo;{query}&rdquo;.
         </div>
       ) : (
         <div className="space-y-8">
           {(activeFilter === 'all' || activeFilter === 'videos') && discoveredVideos.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-slate-900">
                 Videos ({discoveredVideos.length})
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -255,7 +252,7 @@ function SearchContent() {
 
           {(activeFilter === 'all' || activeFilter === 'topics') && matchedTopics.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-slate-900">
                 Topics ({matchedTopics.length})
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -263,10 +260,10 @@ function SearchContent() {
                   <Link
                     key={t.id}
                     href={`/topics/${t.slug}`}
-                    className="p-5 rounded-xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors space-y-1.5 block group"
+                    className="p-5 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all space-y-1.5 block group"
                   >
-                    <span className="font-bold text-base text-white group-hover:text-blue-400 transition-colors block">{t.name}</span>
-                    <p className="text-sm text-zinc-400 line-clamp-1">{t.description}</p>
+                    <span className="font-bold text-base text-slate-900 group-hover:text-indigo-600 transition-colors block">{t.name}</span>
+                    <p className="text-sm text-slate-600 line-clamp-1">{t.description}</p>
                   </Link>
                 ))}
               </div>
@@ -275,7 +272,7 @@ function SearchContent() {
 
           {(activeFilter === 'all' || activeFilter === 'playlists') && matchedPlaylists.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-slate-900">
                 Playlists ({matchedPlaylists.length})
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -283,11 +280,11 @@ function SearchContent() {
                   <Link
                     key={pl.id}
                     href={`/playlists/${pl.id}`}
-                    className="p-5 rounded-xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition-colors space-y-1.5 block group"
+                    className="p-5 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all space-y-1.5 block group"
                   >
-                    <h3 className="font-bold text-base text-white group-hover:text-blue-400 transition-colors">{pl.title}</h3>
-                    <p className="text-sm text-zinc-400 line-clamp-1">{pl.description}</p>
-                    <div className="text-xs text-zinc-500 pt-1">
+                    <h3 className="font-bold text-base text-slate-900 group-hover:text-indigo-600 transition-colors">{pl.title}</h3>
+                    <p className="text-sm text-slate-600 line-clamp-1">{pl.description}</p>
+                    <div className="text-xs text-slate-500 pt-1">
                       {pl.items?.length || 0} lessons · ~{pl.estimatedTotalMinutes}m
                     </div>
                   </Link>
@@ -303,7 +300,7 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="p-10 text-sm text-zinc-500">Loading search...</div>}>
+    <Suspense fallback={<div className="p-10 text-sm text-slate-500">Loading search...</div>}>
       <SearchContent />
     </Suspense>
   );

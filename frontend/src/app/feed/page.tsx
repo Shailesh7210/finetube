@@ -59,11 +59,11 @@ export default function FeedPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full space-y-7">
-      {/* Clean Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Your Feed</h1>
-          <p className="text-sm text-zinc-400">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Your Feed</h1>
+          <p className="text-sm text-slate-500">
             {educationLevel && educationLevel !== 'not_specified' ? educationLevel : 'Universal Learner'}
             {stream && stream !== 'none' ? ` · ${stream}` : ''}
           </p>
@@ -72,13 +72,13 @@ export default function FeedPage() {
         <div className="flex items-center gap-2.5 shrink-0">
           <Link
             href="/profile"
-            className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium transition-colors"
+            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors"
           >
             Edit Profile
           </Link>
           <Link
             href="/settings/interests"
-            className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-sm font-medium transition-colors border border-zinc-800"
+            className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium transition-colors border border-slate-300"
           >
             Interests
           </Link>
@@ -91,8 +91,8 @@ export default function FeedPage() {
           onClick={() => setSelectedFilter('all')}
           className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors shrink-0 ${
             selectedFilter === 'all'
-              ? 'bg-zinc-100 text-zinc-950 font-semibold'
-              : 'text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800'
+              ? 'bg-slate-900 text-white font-semibold'
+              : 'text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100'
           }`}
         >
           All ({allFeedItems.length})
@@ -104,8 +104,8 @@ export default function FeedPage() {
             onClick={() => setSelectedFilter(sub.id)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors shrink-0 ${
               selectedFilter === sub.id
-                ? 'bg-zinc-100 text-zinc-950 font-semibold'
-                : 'text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800'
+                ? 'bg-slate-900 text-white font-semibold'
+                : 'text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100'
             }`}
           >
             {sub.name}
@@ -118,8 +118,8 @@ export default function FeedPage() {
             onClick={() => setSelectedFilter(topic.id)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors shrink-0 ${
               selectedFilter === topic.id
-                ? 'bg-zinc-100 text-zinc-950 font-semibold'
-                : 'text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800'
+                ? 'bg-slate-900 text-white font-semibold'
+                : 'text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100'
             }`}
           >
             {topic.name}
@@ -139,11 +139,11 @@ export default function FeedPage() {
       </div>
 
       {filteredFeed.length === 0 && (
-        <div className="p-14 text-center border border-zinc-800 rounded-2xl bg-zinc-900/20 space-y-4">
-          <h3 className="text-lg font-semibold text-white">No videos match this filter</h3>
+        <div className="p-14 text-center border border-slate-200 rounded-2xl bg-white space-y-4">
+          <h3 className="text-lg font-semibold text-slate-900">No videos match this filter</h3>
           <Link
             href="/search"
-            className="inline-block px-5 py-2.5 rounded-xl bg-zinc-100 text-zinc-950 text-sm font-semibold hover:bg-white transition-colors"
+            className="inline-block px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors"
           >
             Discover on YouTube
           </Link>
@@ -152,10 +152,10 @@ export default function FeedPage() {
 
       {/* Compact Curated Learning Paths */}
       {relevantPlaylists.length > 0 && selectedFilter === 'all' && (
-        <div className="pt-6 border-t border-zinc-800/80 space-y-4">
+        <div className="pt-6 border-t border-slate-200 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Recommended Learning Paths</h2>
-            <Link href="/playlists" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <h2 className="text-lg font-bold text-slate-900">Recommended Learning Paths</h2>
+            <Link href="/playlists" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
               View all →
             </Link>
           </div>
@@ -165,12 +165,12 @@ export default function FeedPage() {
               <Link
                 key={pl.id}
                 href={`/playlists/${pl.id}`}
-                className="p-5 rounded-xl border border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 transition-colors space-y-1.5 block"
+                className="p-5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm transition-all space-y-1.5 block"
               >
-                <div className="text-xs text-zinc-500">
+                <div className="text-xs text-slate-500">
                   {pl.items.length} lessons · ~{pl.estimatedTotalMinutes}m
                 </div>
-                <h3 className="text-base font-semibold text-white truncate">{pl.title}</h3>
+                <h3 className="text-base font-semibold text-slate-900 truncate">{pl.title}</h3>
               </Link>
             ))}
           </div>

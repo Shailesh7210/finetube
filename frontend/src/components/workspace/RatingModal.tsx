@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Star, X, CheckCircle2, ShieldCheck, ThumbsUp, HelpCircle } from 'lucide-react';
+import { Star, X, CheckCircle2 } from 'lucide-react';
 import { store } from '@/lib/store';
 import { Video } from '@/lib/types';
 
@@ -18,7 +18,6 @@ export function RatingModal({ video, isOpen, onClose, onRated }: RatingModalProp
   const [clarity, setClarity] = useState(5);
   const [practicalExamples, setPracticalExamples] = useState(5);
   const [answeredQuestion, setAnsweredQuestion] = useState(true);
-  const [accuracyConcerns, setAccuracyConcerns] = useState(false);
   const [comment, setComment] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -30,7 +29,7 @@ export function RatingModal({ video, isOpen, onClose, onRated }: RatingModalProp
       clarity,
       practicalExamples,
       answeredQuestion,
-      accuracyConcerns,
+      accuracyConcerns: false,
       comment: comment.trim() || undefined
     });
 
@@ -43,43 +42,32 @@ export function RatingModal({ video, isOpen, onClose, onRated }: RatingModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+      <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-900">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 p-1 rounded-lg hover:bg-slate-100 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
         {isSubmitted ? (
           <div className="py-8 flex flex-col items-center text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-white">Feedback Recorded!</h3>
-            <p className="text-xs text-slate-400 max-w-xs">
-              Your feedback feeds directly into the Bayesian confidence scoring model for this topic.
-            </p>
+            <h3 className="text-lg font-bold text-slate-900">Rating Saved</h3>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <div className="flex items-center gap-1.5 text-xs text-brand-400 font-semibold mb-1 uppercase tracking-wider">
-                <ShieldCheck className="w-4 h-4" />
-                Evidence & Pedagogy Review
-              </div>
-              <h3 className="text-base font-bold text-white line-clamp-1">
-                Rate &quot;{video.title}&quot;
+              <h3 className="text-lg font-bold text-slate-900 line-clamp-1 pr-6">
+                Rate Video
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Evaluates how clearly and effectively this video teaches the target concept.
-              </p>
+              <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{video.title}</p>
             </div>
 
-            {/* Star Rating */}
-            <div className="flex flex-col items-center justify-center py-2 bg-slate-950/60 rounded-xl border border-slate-800/80">
-              <span className="text-xs text-slate-400 mb-2 font-medium">Overall Educational Value</span>
+            <div className="flex flex-col items-center justify-center py-3 bg-slate-50 rounded-xl border border-slate-200">
               <div className="flex items-center gap-1.5">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -94,29 +82,28 @@ export function RatingModal({ video, isOpen, onClose, onRated }: RatingModalProp
                       className={`w-7 h-7 ${
                         (hoverScore || score) >= star
                           ? 'fill-amber-400 text-amber-400'
-                          : 'text-slate-600'
+                          : 'text-slate-300'
                       }`}
                     />
                   </button>
                 ))}
               </div>
-              <span className="text-xs font-semibold text-amber-400 mt-2 font-mono">
-                {score} / 5 Stars
+              <span className="text-xs font-semibold text-amber-600 mt-2 font-mono">
+                {score} / 5
               </span>
             </div>
 
-            {/* Structured Criteria (Section 5.2) */}
-            <div className="space-y-3 text-xs">
+            <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-slate-300">Explanation Clarity:</span>
+                <span className="text-slate-700">Explanation Clarity</span>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((lvl) => (
                     <button
                       key={lvl}
                       type="button"
                       onClick={() => setClarity(lvl)}
-                      className={`px-2 py-0.5 rounded text-xs ${
-                        clarity === lvl ? 'bg-brand-600 text-white font-bold' : 'bg-slate-800 text-slate-400'
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
+                        clarity === lvl ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'
                       }`}
                     >
                       {lvl}
@@ -126,15 +113,15 @@ export function RatingModal({ video, isOpen, onClose, onRated }: RatingModalProp
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-300">Practical Code Examples:</span>
+                <span className="text-slate-700">Examples &amp; Depth</span>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((lvl) => (
                     <button
                       key={lvl}
                       type="button"
                       onClick={() => setPracticalExamples(lvl)}
-                      className={`px-2 py-0.5 rounded text-xs ${
-                        practicalExamples === lvl ? 'bg-brand-600 text-white font-bold' : 'bg-slate-800 text-slate-400'
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
+                        practicalExamples === lvl ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'
                       }`}
                     >
                       {lvl}
@@ -144,14 +131,14 @@ export function RatingModal({ video, isOpen, onClose, onRated }: RatingModalProp
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-slate-300">Answered the concept clearly?</span>
+                <span className="text-slate-700">Answered the topic clearly?</span>
                 <button
                   type="button"
                   onClick={() => setAnsweredQuestion(!answeredQuestion)}
-                  className={`px-3 py-1 rounded text-xs font-medium border ${
-                    answeredQuestion 
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
-                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                  className={`px-3 py-1 rounded-lg text-xs font-medium border ${
+                    answeredQuestion
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-slate-100 text-slate-600 border-slate-200'
                   }`}
                 >
                   {answeredQuestion ? 'Yes' : 'No'}
@@ -159,30 +146,27 @@ export function RatingModal({ video, isOpen, onClose, onRated }: RatingModalProp
               </div>
             </div>
 
-            {/* Comment input */}
-            <div>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Optional feedback: specific strengths, weaknesses or inaccuracies..."
-                rows={2}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 resize-none"
-              />
-            </div>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Optional comment..."
+              rows={2}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500 resize-none"
+            />
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-1">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-colors"
+                className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900"
               >
-                Skip / Cancel
+                Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-lg text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white shadow-md transition-all"
+                className="px-5 py-2 rounded-xl text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-white transition-colors"
               >
-                Submit Rating
+                Submit
               </button>
             </div>
           </form>

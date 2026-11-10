@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Download, Check, Sparkles } from 'lucide-react';
+import { Download, Check } from 'lucide-react';
 import { Video } from '@/lib/types';
 import { formatTimestamp, downloadMarkdownFile } from '@/lib/utils';
 import { store } from '@/lib/store';
@@ -41,10 +41,10 @@ export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
           text: 'Translates physical observations into quantitative symbolic relationships. Pay attention to dimensional consistency and unit conversions.',
           timestamp: video.chapters[1]?.start || 120,
           code: tId.includes('physics')
-            ? `Φ_E = ∮ E⃗ · dA⃗ = Q_enc / ε₀\n// Symmetry cases: Spherical (4πr²), Cylindrical (2πrL)`
+            ? `Φ_E = ∮ E⃗ · dA⃗ = Q_enc / ε₀`
             : tId.includes('chem')
-            ? `Nucleophile (δ⁻) ──► Electrophile (δ⁺)\n// Carbocation Stability: 3° > 2° > 1° > Methyl`
-            : `f'(x) = lim(h→0) [f(x+h) - f(x)] / h\n// Fundamental Theorem of Calculus: ∫ₐᵇ f(t) dt = F(b) - F(a)`
+            ? `Nucleophile (δ⁻) ──► Electrophile (δ⁺)\nCarbocation Stability: 3° > 2° > 1° > Methyl`
+            : `f'(x) = lim(h→0) [f(x+h) - f(x)] / h`
         }
       ];
     }
@@ -83,7 +83,6 @@ export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
       ];
     }
 
-    // CS / Programming default
     return [
       {
         id: 1,
@@ -98,7 +97,7 @@ export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
         timestamp: video.chapters[1]?.start || 120,
         code: tId.includes('react')
           ? `useEffect(() => {\n  const handler = () => console.log("Synced");\n  window.addEventListener("resize", handler);\n  return () => window.removeEventListener("resize", handler);\n}, []);`
-          : `// Core algorithmic invariant step\nfunction process(node) {\n  if (!node) return null;\n  return node.value;\n}`
+          : `function process(node) {\n  if (!node) return null;\n  return node.value;\n}`
       }
     ];
   }, [video]);
@@ -133,7 +132,7 @@ export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
   const handleExportMarkdown = () => {
     const content = [
       `# AI Structured Notes: ${video.title}`,
-      `**Curriculum Topic**: ${video.primaryTopicId}`,
+      `**Topic**: ${video.primaryTopicId}`,
       `**Generated On**: ${new Date().toLocaleDateString()}`,
       `\n---\n`,
       ...sections.map(s => [
@@ -148,57 +147,50 @@ export function AiNotesPanel({ video, onSeek }: AiNotesPanelProps) {
 
   return (
     <div className="flex flex-col h-full space-y-3">
-      <div className="flex items-center justify-between text-xs pb-1.5 border-b border-zinc-800/80">
-        <div className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="text-zinc-300 font-semibold">AI Structured Summary</span>
-        </div>
+      <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-200">
+        <span className="text-slate-900 font-semibold">AI Summary</span>
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportMarkdown}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 hover:text-white transition-colors"
-            title="Download Summary as Markdown (.md)"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+            title="Download Markdown"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export (.md)</span>
+            <span>Export</span>
           </button>
           <button
             onClick={handleSave}
             disabled={saved}
-            className="px-2.5 py-1 rounded bg-blue-600/20 border border-blue-500/40 text-xs text-blue-400 hover:bg-blue-600/30 font-medium transition-colors inline-flex items-center gap-1 disabled:opacity-60"
+            className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-xs text-white font-medium transition-colors inline-flex items-center gap-1 disabled:opacity-60"
           >
-            {saved && <Check className="w-3 h-3 text-emerald-400" />}
-            <span>{saved ? 'Saved to Library' : 'Save to Library'}</span>
+            {saved && <Check className="w-3 h-3" />}
+            <span>{saved ? 'Saved' : 'Save to Library'}</span>
           </button>
         </div>
       </div>
 
-      <p className="text-[11px] text-zinc-500 bg-zinc-900/40 px-2.5 py-1.5 rounded border border-zinc-800/60">
-        Draft notes are scoped to this session. Click <strong>Save to Library</strong> above if you want to permanently store them.
-      </p>
-
       <div className="flex-1 overflow-y-auto space-y-3 pr-1">
         {sections.map((sec) => (
-          <div key={sec.id} className="p-3 bg-zinc-900/60 rounded-md border border-zinc-800/60 space-y-2">
+          <div key={sec.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-zinc-200">{sec.title}</span>
+              <span className="font-semibold text-slate-900">{sec.title}</span>
               <button
                 onClick={() => onSeek(sec.timestamp)}
-                className="font-mono text-[11px] text-blue-400 hover:underline"
+                className="font-mono text-xs text-indigo-600 hover:underline font-medium"
               >
                 {formatTimestamp(sec.timestamp)}
               </button>
             </div>
 
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-sm text-slate-700 leading-relaxed">
               {sec.text}
             </p>
 
             {sec.code && (
-              <div className="relative rounded bg-black/60 p-2.5 border border-zinc-800 font-mono text-xs text-zinc-300">
+              <div className="relative rounded-lg bg-slate-900 p-3 font-mono text-xs text-slate-100">
                 <button
                   onClick={() => handleCopy(sec.code!, sec.id)}
-                  className="absolute top-2 right-2 text-[10px] text-zinc-500 hover:text-zinc-300"
+                  className="absolute top-2 right-2 text-xs text-slate-400 hover:text-white"
                 >
                   {copied === sec.id ? 'Copied' : 'Copy'}
                 </button>

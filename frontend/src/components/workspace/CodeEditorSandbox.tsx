@@ -193,100 +193,91 @@ export function CodeEditorSandbox({ videoId, topicId = 'react_hooks' }: CodeEdit
 
   return (
     <div className="flex flex-col h-full space-y-3">
-      {/* Sandbox Controls Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-zinc-800 pb-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-slate-200 pb-2.5">
         <div className="flex items-center gap-2">
-          {/* Language Selector */}
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value as any)}
-            className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-200 focus:outline-none focus:border-zinc-600"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-500"
           >
             <option value="javascript">JavaScript</option>
             <option value="python">Python</option>
             <option value="typescript">TypeScript</option>
           </select>
 
-          {/* Quota Badge */}
-          <span className="text-[11px] text-zinc-500 font-mono hidden sm:inline">
-            Quota: <strong>{quotaRemaining}/50</strong> runs left
+          <span className="text-xs text-slate-500 font-mono hidden sm:inline">
+            {quotaRemaining}/50 left
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Save Snippet */}
           <button
             onClick={handleSaveToLibrary}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-xs text-zinc-300 hover:text-white border border-zinc-800 transition-colors"
-            title="Save snippet to Study Library"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs text-slate-700 border border-slate-200 transition-colors"
           >
-            {isSaved ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
-            <span>{isSaved ? 'Saved to Library' : 'Save Snippet'}</span>
+            {isSaved ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
+            <span>{isSaved ? 'Saved' : 'Save'}</span>
           </button>
 
-          {/* Reset Template */}
           <button
             onClick={handleReset}
-            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
-            title="Reset to topic template"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors"
+            title="Reset"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
-          {/* Run Code Button */}
           <button
             onClick={handleRunCode}
             disabled={isRunning}
-            className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-zinc-200 text-zinc-950 font-bold rounded-md text-xs transition-colors shadow-sm disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg text-xs transition-colors disabled:opacity-50"
           >
             <Play className="w-3 h-3 fill-current" />
-            <span>{isRunning ? 'Running...' : 'Run Code'}</span>
+            <span>{isRunning ? 'Running...' : 'Run'}</span>
           </button>
         </div>
       </div>
 
-      {/* Editor & Console Split */}
-      <div className="flex-1 flex flex-col gap-2 min-h-0">
+      <div className="flex-1 flex flex-col gap-2.5 min-h-0">
         <textarea
           value={code}
           onChange={(e) => setCode(e.target.value)}
           spellCheck={false}
-          className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg p-3 font-mono text-xs text-zinc-200 resize-none focus:outline-none focus:border-zinc-700 leading-relaxed tracking-wide"
+          className="flex-1 bg-slate-50 border border-slate-300 rounded-xl p-3 font-mono text-xs text-slate-900 resize-none focus:outline-none focus:bg-white focus:border-indigo-500 leading-relaxed"
           placeholder="Write or test code here..."
         />
 
-        {/* Execution Output Console */}
-        <div className="h-36 bg-zinc-950 border border-zinc-800/90 rounded-lg p-3 flex flex-col justify-between font-mono text-xs overflow-hidden">
-          <div className="flex items-center justify-between text-[11px] text-zinc-500 pb-1.5 border-b border-zinc-900">
-            <span className="font-semibold uppercase tracking-wider text-zinc-400">Sandbox Output</span>
+        <div className="h-36 bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-between font-mono text-xs overflow-hidden">
+          <div className="flex items-center justify-between text-xs text-slate-500 pb-1.5 border-b border-slate-200">
+            <span className="font-semibold text-slate-700">Output</span>
             <div className="flex items-center gap-3">
               {executionTime !== null && (
-                <span className="text-emerald-400 text-[10px]">
-                  ⚡ <strong>{executionTime}ms</strong> execution
+                <span className="text-emerald-700 text-xs">
+                  {executionTime}ms
                 </span>
               )}
               <button
                 onClick={() => setOutput([])}
-                className="hover:text-zinc-300 text-zinc-600 transition-colors"
-                title="Clear console"
+                className="hover:text-slate-900 text-slate-400 transition-colors"
+                title="Clear"
               >
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto pt-2 space-y-1 text-zinc-300">
+          <div className="flex-1 overflow-y-auto pt-2 space-y-1 text-slate-800">
             {output.length > 0 ? (
               output.map((line, i) => (
                 <div
                   key={i}
-                  className={line.startsWith('Error') || line.startsWith('Runtime Error') ? 'text-rose-400' : ''}
+                  className={line.startsWith('Error') || line.startsWith('Runtime Error') ? 'text-rose-600' : ''}
                 >
                   {line}
                 </div>
               ))
             ) : (
-              <span className="text-zinc-600 italic">Click Run to evaluate in isolated sandbox.</span>
+              <span className="text-slate-400 italic">Click Run to execute.</span>
             )}
           </div>
         </div>

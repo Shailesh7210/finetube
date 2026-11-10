@@ -13,7 +13,7 @@ interface IngestVideoModalProps {
 
 export function IngestVideoModal({ isOpen, onClose, onSuccess }: IngestVideoModalProps) {
   const [urlOrId, setUrlOrId] = useState('');
-  const [topicId, setTopicId] = useState('react_hooks');
+  const [topicId, setTopicId] = useState('physics_electrostatics');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [jobProgress, setJobProgress] = useState<number | null>(null);
   const [jobStep, setJobStep] = useState<string>('');
@@ -29,17 +29,15 @@ export function IngestVideoModal({ isOpen, onClose, onSuccess }: IngestVideoModa
     setIsSubmitting(true);
     setErrorMsg(null);
     setJobProgress(15);
-    setJobStep('Validating YouTube URL & educational rights...');
+    setJobStep('Validating YouTube URL...');
 
     try {
       const response = await api.ingestVideo(urlOrId.trim(), topicId);
       if (!response?.jobId) {
-        // Fallback simulated ingest if backend is offline
         simulateFallbackProgress();
         return;
       }
 
-      // Poll job progress
       const jobId = response.jobId;
       const interval = setInterval(async () => {
         const job = await api.getJobStatus(jobId);
@@ -47,11 +45,11 @@ export function IngestVideoModal({ isOpen, onClose, onSuccess }: IngestVideoModa
 
         if (job.status === 'PROCESSING') {
           setJobProgress(60);
-          setJobStep('Extracting transcript segments & evaluating concept coverage...');
+          setJobStep('Evaluating concept coverage...');
         } else if (job.status === 'COMPLETED') {
           clearInterval(interval);
           setJobProgress(100);
-          setJobStep('Video verified, scored, and published to topic feed.');
+          setJobStep('Added to feed.');
           setIsSubmitting(false);
           const vidId = job.result?.id || `vid_${urlOrId.replace(/[^a-zA-Z0-9]/g, '')}`;
           setCompletedVideoId(vidId);
@@ -59,7 +57,7 @@ export function IngestVideoModal({ isOpen, onClose, onSuccess }: IngestVideoModa
         } else if (job.status === 'FAILED') {
           clearInterval(interval);
           setIsSubmitting(false);
-          setErrorMsg('Failed to process video. Verify the URL or video ID.');
+          setErrorMsg('Failed to process video.');
         }
       }, 700);
 
@@ -71,22 +69,17 @@ export function IngestVideoModal({ isOpen, onClose, onSuccess }: IngestVideoModa
   const simulateFallbackProgress = () => {
     setTimeout(() => {
       setJobProgress(50);
-      setJobStep('Extracting transcript segments & concept boundaries...');
+      setJobStep('Extracting transcript segments...');
     }, 900);
 
     setTimeout(() => {
-      setJobProgress(85);
-      setJobStep('Computing Bayesian rank & pedagogical clarity score...');
-    }, 1800);
-
-    setTimeout(() => {
       setJobProgress(100);
-      setJobStep('Ingestion complete. Added to curriculum feed.');
+      setJobStep('Complete.');
       setIsSubmitting(false);
-      const fallbackId = 'vid_react_useeffect';
+      const fallbackId = 'vid_physics_electrostatics_cbse';
       setCompletedVideoId(fallbackId);
       if (onSuccess) onSuccess(fallbackId);
-    }, 2800);
+    }, 2000);
   };
 
   const handleReset = () => {
@@ -99,72 +92,64 @@ export function IngestVideoModal({ isOpen, onClose, onSuccess }: IngestVideoModa
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-zinc-100 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+      <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl p-6 text-slate-900 shadow-2xl relative">
         <button
           onClick={handleReset}
-          className="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="mb-5">
-          <h2 className="text-lg font-bold text-white">Ingest Educational Video</h2>
-          <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-            Submit a <strong>YouTube lecture</strong> to the automated curriculum pipeline. FineTube extracts <strong>transcript segments</strong>, measures <strong>concept coverage</strong>, and computes an objective <strong>Bayesian ranking</strong>.
-          </p>
-        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-4">Add YouTube Video</h2>
 
         {!completedVideoId ? (
-          <form onSubmit={handleStartIngest} className="space-y-4">
+          <form onSubmit={handleStartIngest} className="space-y-4 text-sm">
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                YouTube URL or Video ID
-              </label>
+              <label className="block font-medium text-slate-700 mb-1.5">YouTube URL or ID</label>
               <input
                 type="text"
                 value={urlOrId}
                 onChange={e => setUrlOrId(e.target.value)}
-                placeholder="e.g. https://www.youtube.com/watch?v=0ZJgIjIuY7U"
+                placeholder="https://www.youtube.com/watch?v=..."
                 disabled={isSubmitting}
-                className="w-full px-3 py-2 text-xs bg-zinc-950 border border-zinc-800 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                Target Topic
-              </label>
+              <label className="block font-medium text-slate-700 mb-1.5">Topic</label>
               <select
                 value={topicId}
                 onChange={e => setTopicId(e.target.value)}
                 disabled={isSubmitting}
-                className="w-full px-3 py-2 text-xs bg-zinc-950 border border-zinc-800 rounded-lg text-white focus:outline-none focus:border-zinc-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:bg-white focus:border-indigo-500"
               >
-                <option value="react_hooks">React Hooks & State Architecture</option>
-                <option value="binary_search_trees">Binary Search Trees (BST)</option>
-                <option value="system_design">System Design Fundamentals</option>
+                <option value="physics_electrostatics">Electrostatics (Physics)</option>
+                <option value="chem_organic_reactions">Organic Reactions (Chemistry)</option>
+                <option value="med_cardiovascular_physiology">Cardiovascular Physiology (Medicine)</option>
+                <option value="hist_french_revolution">French Revolution (History)</option>
+                <option value="react_hooks">React Hooks (Computer Science)</option>
               </select>
             </div>
 
             {jobProgress !== null && (
-              <div className="p-3 bg-zinc-950 border border-zinc-800/80 rounded-lg space-y-2">
-                <div className="flex justify-between text-xs text-zinc-400">
-                  <span className="font-semibold text-zinc-300">Pipeline Status</span>
-                  <span><strong>{jobProgress}%</strong></span>
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>{jobStep}</span>
+                  <strong>{jobProgress}%</strong>
                 </div>
-                <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 transition-all duration-300"
+                    className="h-full bg-indigo-600 transition-all duration-300"
                     style={{ width: `${jobProgress}%` }}
                   />
                 </div>
-                <p className="text-[11px] text-zinc-500">{jobStep}</p>
               </div>
             )}
 
             {errorMsg && (
-              <div className="p-2.5 bg-red-950/40 border border-red-800/50 rounded text-xs text-red-300">
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700">
                 {errorMsg}
               </div>
             )}
@@ -174,45 +159,38 @@ export function IngestVideoModal({ isOpen, onClose, onSuccess }: IngestVideoModa
                 type="button"
                 onClick={handleReset}
                 disabled={isSubmitting}
-                className="px-3.5 py-1.5 text-xs text-zinc-400 hover:text-white"
+                className="px-4 py-2 text-slate-600 hover:text-slate-900"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !urlOrId.trim()}
-                className="px-4 py-2 bg-white text-zinc-950 rounded-lg text-xs font-semibold hover:bg-zinc-200 disabled:opacity-40 transition-colors"
+                className="px-5 py-2 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 disabled:opacity-40 transition-colors"
               >
-                {isSubmitting ? 'Processing Pipeline...' : 'Queue Ingestion'}
+                {isSubmitting ? 'Processing...' : 'Add Video'}
               </button>
             </div>
           </form>
         ) : (
           <div className="py-4 space-y-4 text-center">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-5 h-5" />
             </div>
-
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold text-white">Video Successfully Processed</h3>
-              <p className="text-xs text-zinc-400">
-                <strong>Transcript parsed</strong>, <strong>concepts mapped</strong>, and <strong>reason codes</strong> generated.
-              </p>
-            </div>
-
+            <h3 className="text-base font-bold text-slate-900">Video Added</h3>
             <div className="pt-2 flex justify-center gap-3">
               <button
                 onClick={handleReset}
-                className="px-3.5 py-1.5 text-xs text-zinc-400 hover:text-white"
+                className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
               >
                 Done
               </button>
               <Link
                 href={`/watch/${completedVideoId}`}
                 onClick={handleReset}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-zinc-950 rounded-lg text-xs font-semibold hover:bg-zinc-200 transition-colors"
+                className="inline-flex items-center gap-1.5 px-5 py-2 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors"
               >
-                Open in Workspace <ArrowRight className="w-3.5 h-3.5" />
+                Watch <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
