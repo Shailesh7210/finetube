@@ -3,8 +3,10 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Star, Keyboard, X, Flag } from 'lucide-react';
+import { Star, Keyboard, X, Flag, Loader2 } from 'lucide-react';
 import { store } from '@/lib/store';
+import { api } from '@/lib/api';
+import { Video } from '@/lib/types';
 import { VideoPlayer, VideoPlayerRef } from '@/components/workspace/VideoPlayer';
 import { PersonalNotesPanel } from '@/components/workspace/PersonalNotesPanel';
 import { AiNotesPanel } from '@/components/workspace/AiNotesPanel';
@@ -32,8 +34,38 @@ export default function WatchPage() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const [video, setVideo] = useState<Video | null>(() => (videoId ? store.getVideoById(videoId) || null : null));
+  const [isLoadingVideo, setIsLoadingVideo] = useState<boolean>(() => (videoId ? !store.getVideoById(videoId) : false));
 
-  const video = store.getVideoById(videoId);
+  useEffect(() => {
+    if (!videoId) return;
+    const cached = store.getVideoById(videoId);
+    if (cached) {
+      setVideo(cached);
+      setIsLoadingVideo(false);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingVideo(true);
+    api
+      .getVideo(videoId)
+      .then(remote => {
+        if (!isMounted) return;
+        if (remote) {
+          store.addDiscoveredVideo(remote);
+          setVideo(remote);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingVideo(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [videoId]);
+
   const topic = video ? store.getTopics().find(t => t.id === video.primaryTopicId) : undefined;
 
   const initialAdaptiveMode: AdaptiveToolMode = useMemo(() => {
@@ -122,6 +154,15 @@ export default function WatchPage() {
       analytics.track('video_opened', { videoId });
     }
   }, [videoId]);
+
+  if (isLoadingVideo && !video) {
+    return (
+      <div className="max-w-4xl mx-auto py-24 px-4 text-center space-y-3">
+        <Loader2 className="w-7 h-7 text-indigo-600 animate-spin mx-auto" />
+        <p className="text-sm text-slate-600">Loading YouTube lesson workspace...</p>
+      </div>
+    );
+  }
 
   if (!video) {
     return (

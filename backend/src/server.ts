@@ -901,17 +901,31 @@ function upsertDiscoveredVideos(items: YouTubeSearchResult[]) {
   }
 }
 
+const STREAM_SUBJECT_FALLBACK: Record<string, string[]> = {
+  science: ['physics', 'chemistry', 'mathematics', 'biology'],
+  medical: ['medical_sciences', 'biology', 'chemistry'],
+  'computer science': ['computer_science', 'mathematics'],
+  commerce: ['economics_finance', 'mathematics'],
+  humanities: ['history', 'geography', 'psychology', 'law_polity'],
+  engineering: ['computer_science', 'mathematics', 'physics'],
+  law: ['law_polity', 'history']
+};
+
 function resolveSubjectsFromStream(stream?: string): string[] {
   if (!stream || !stream.trim()) return [];
   const norm = stream.trim().toLowerCase();
-  return taxonomyRegistry
+  const matched = new Set<string>(STREAM_SUBJECT_FALLBACK[norm] || []);
+
+  taxonomyRegistry
     .getAllSubjects()
     .filter(s => {
       const streamMatch = (s.streams || []).some(st => st.toLowerCase().includes(norm) || norm.includes(st.toLowerCase()));
       const categoryMatch = s.category.toLowerCase() === norm || s.name.toLowerCase() === norm;
       return streamMatch || categoryMatch;
     })
-    .map(s => s.id);
+    .forEach(s => matched.add(s.id));
+
+  return Array.from(matched);
 }
 
 interface FeedHydrationRequest {

@@ -30,7 +30,7 @@ export default function PlaylistDetailPage() {
       if (pl) {
         setPlaylist(pl);
         setItems(pl.items || []);
-        const [topics, subjects, feedVideos] = await Promise.all([
+        const [topics, subjects, feedItems] = await Promise.all([
           api.getTopics(),
           api.getSubjects(),
           api.getFeed()
@@ -40,6 +40,7 @@ export default function PlaylistDetailPage() {
         if (t) {
           setSubject(subjects.find(s => s.id === t.subjectId));
         }
+        const feedVideos = feedItems.map(item => item.video).filter(Boolean);
         const vids = feedVideos.length > 0 ? feedVideos : store.getVideos();
         setAvailableVideos(vids);
         if (vids.length > 0) setSelectedAddVideoId(vids[0].id);

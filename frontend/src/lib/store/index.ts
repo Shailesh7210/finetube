@@ -166,18 +166,23 @@ class StoreState {
   }
 
   getVideoById(id: string): Video | undefined {
-    return this.videos.find(v => v.id === id || v.providerVideoId === id) || 
-           this.discoveredVideos.get(id);
+    return (
+      this.discoveredVideos.get(id) ||
+      this.videos.find(v => v.id === id) ||
+      this.videos.find(v => v.providerVideoId === id)
+    );
   }
 
   addDiscoveredVideo(video: Video): void {
     this.discoveredVideos.set(video.id, video);
-    if (video.providerVideoId) {
+    if (video.providerVideoId && !this.discoveredVideos.has(video.providerVideoId)) {
       this.discoveredVideos.set(video.providerVideoId, video);
     }
-    const exists = this.videos.some(v => v.id === video.id || (video.providerVideoId && v.providerVideoId === video.providerVideoId));
-    if (!exists) {
+    const existingIdx = this.videos.findIndex(v => v.id === video.id);
+    if (existingIdx === -1) {
       this.videos.unshift(video);
+    } else {
+      this.videos[existingIdx] = video;
     }
   }
 
@@ -228,8 +233,9 @@ class StoreState {
       return false;
     });
 
-    // Fallback: If strict filters yield zero videos, show top universal videos so user is never empty
-    if (candidates.length === 0) {
+    // Respect strict focus mode when explicit preferences exist (prevents cross-stream leakage)
+    const hasPreferences = followedSet.size > 0 || customInterests.length > 0;
+    if (candidates.length === 0 && (!hasPreferences || this.user.strictFocusMode === false)) {
       candidates = this.videos.filter(v => !mutedSet.has(v.primaryTopicId));
     }
 
