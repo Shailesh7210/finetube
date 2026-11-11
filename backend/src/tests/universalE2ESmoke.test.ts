@@ -173,8 +173,49 @@ async function runUniversalE2ESmoke() {
   assert.strictEqual(repRes.status, 201, 'Submit report returns 201');
   console.log('✅ PASSED [Moderation]: Logged educational categorization report');
 
+  // 9. Stream-Strict Dynamic Feed Hydration (Unseeded Subject -> Zero Off-Subject Leakage)
+  const econFeedRes = await invokeExpress(app, 'GET', '/api/v1/feed?subjects=economics_finance&stream=Commerce');
+  assert.strictEqual(econFeedRes.status, 200, 'Economics strict feed returns 200');
+  assert.ok(econFeedRes.body.data.length > 0, 'Hydrated videos for unseeded Economics subject');
+  assert.strictEqual(econFeedRes.body.meta.hydrated, true, 'Feed marked hydrated when local pool was sparse');
+  assert.ok(
+    econFeedRes.body.data.every((item: any) =>
+      item.video.primaryTopicId !== 'react_hooks' &&
+      item.video.primaryTopicId !== 'physics_electrostatics' &&
+      item.video.primaryTopicId !== 'med_cardiovascular_physiology'
+    ),
+    'Economics feed strictly excludes React, Physics, and Medical videos'
+  );
+  console.log(`✅ PASSED [Dynamic Feed Hydration]: Hydrated ${econFeedRes.body.data.length} Economics videos with zero off-subject leakage`);
+
+  // 10. Anti-Shorts & Entertainment Filter Check + Dynamic Video Resolution
+  const { isEducationalAndNotShort } = await import('../services/youtubeService.js');
+  assert.strictEqual(
+    isEducationalAndNotShort({ title: 'Quick Physics Trick #shorts', durationSeconds: 45 }),
+    false,
+    'Rejects YouTube Shorts (<90s / #shorts)'
+  );
+  assert.strictEqual(
+    isEducationalAndNotShort({ title: 'Funny Prank Compilation', durationSeconds: 600 }),
+    false,
+    'Rejects non-educational noise'
+  );
+  assert.strictEqual(
+    isEducationalAndNotShort({ title: 'Thermodynamics Entropy Full Lecture', durationSeconds: 1850 }),
+    true,
+    'Allows full educational lectures'
+  );
+
+  const missingVidRes = await invokeExpress(app, 'GET', '/api/v1/videos/definitely_invalid_id_xyz');
+  assert.strictEqual(missingVidRes.status, 404, 'Unknown invalid video ID still returns 404');
+
+  const curatedVidRes = await invokeExpress(app, 'GET', '/api/v1/videos/vid_WUvTyaaNkzM');
+  assert.strictEqual(curatedVidRes.status, 200, 'Resolves curated YouTube video by FineTube ID cleanly');
+  assert.strictEqual(curatedVidRes.body.data.providerVideoId, 'WUvTyaaNkzM');
+  console.log('✅ PASSED [Video Resolution & Filtering]: Verified Shorts filtering and dynamic ID lookup');
+
   console.log('\n==============================================================');
-  console.log('In-Process End-to-End Universal Platform Test Passed 8/8!');
+  console.log('In-Process End-to-End Universal Platform Test Passed 10/10!');
   console.log('==============================================================\n');
 }
 
