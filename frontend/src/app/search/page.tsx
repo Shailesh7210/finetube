@@ -51,7 +51,7 @@ function SearchContent() {
 
     const timer = setTimeout(async () => {
       try {
-        const searchOptions: any = {};
+        const searchOptions: any = { pageSize: 20 };
         if (prioritizeContext && userEducationLevel && userEducationLevel !== 'not_specified') {
           searchOptions.educationLevel = userEducationLevel;
         }
@@ -83,7 +83,7 @@ function SearchContent() {
     if (!trimmed || !nextPageToken || isLoadingMore) return;
     setIsLoadingMore(true);
     try {
-      const searchOptions: any = { pageToken: nextPageToken };
+      const searchOptions: any = { pageSize: 20, pageToken: nextPageToken };
       if (prioritizeContext && userEducationLevel && userEducationLevel !== 'not_specified') {
         searchOptions.educationLevel = userEducationLevel;
       }
