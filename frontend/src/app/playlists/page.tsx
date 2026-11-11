@@ -29,7 +29,7 @@ export default function PlaylistsPage() {
 
   useEffect(() => {
     async function loadData() {
-      const [pls, tops, subs, vids] = await Promise.all([
+      const [pls, tops, subs, feedItems] = await Promise.all([
         api.getPlaylists(),
         api.getTopics(),
         api.getSubjects(),
@@ -38,6 +38,7 @@ export default function PlaylistsPage() {
       setPlaylists(pls);
       setTopics(tops);
       setSubjects(subs);
+      const vids = feedItems.map(item => item.video).filter(Boolean);
       setVideos(vids.length > 0 ? vids : store.getVideos());
 
       if (tops.length > 0) {

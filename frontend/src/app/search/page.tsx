@@ -18,14 +18,21 @@ function SearchContent() {
   const [query, setQuery] = useState(queryParam);
   const [activeFilter, setActiveFilter] = useState<'all' | 'videos' | 'topics' | 'playlists'>('all');
   const [prioritizeContext, setPrioritizeContext] = useState(true);
+  const [strictStreamOnly, setStrictStreamOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [nextPageToken, setNextPageToken] = useState<string | undefined>(undefined);
   const [discoveredVideos, setDiscoveredVideos] = useState<Video[]>([]);
   const [addedInterestNotice, setAddedInterestNotice] = useState(false);
 
   const allTopics = store.getTopics();
+  const allSubjects = store.getSubjects();
   const allPlaylists = store.getPlaylists();
   const userInterests = user?.customInterests || store.user.customInterests || [];
   const userEducationLevel = user?.educationLevel || store.user.educationLevel;
+  const followedSubjectIds = user?.followedSubjectIds || store.user.followedSubjectIds || [];
+  const primarySubjectId = followedSubjectIds[0];
+  const primarySubjectName = allSubjects.find(s => s.id === primarySubjectId)?.name || user?.stream;
 
   useEffect(() => {
     setQuery(queryParam);
@@ -35,6 +42,7 @@ function SearchContent() {
     const trimmed = query.trim();
     if (!trimmed) {
       setDiscoveredVideos([]);
+      setNextPageToken(undefined);
       return;
     }
 
@@ -47,10 +55,15 @@ function SearchContent() {
         if (prioritizeContext && userEducationLevel && userEducationLevel !== 'not_specified') {
           searchOptions.educationLevel = userEducationLevel;
         }
+        if (strictStreamOnly && primarySubjectId) {
+          searchOptions.subjectId = primarySubjectId;
+          searchOptions.strict = true;
+        }
 
         const res = await api.searchYouTube(trimmed, searchOptions);
         if (isMounted && res && Array.isArray(res.data)) {
           setDiscoveredVideos(res.data);
+          setNextPageToken(res.nextPageToken);
         }
       } catch (err) {
         console.error('YouTube search error:', err);
@@ -63,7 +76,35 @@ function SearchContent() {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [query, prioritizeContext, userEducationLevel]);
+  }, [query, prioritizeContext, strictStreamOnly, primarySubjectId, userEducationLevel]);
+
+  const handleLoadMore = async () => {
+    const trimmed = query.trim();
+    if (!trimmed || !nextPageToken || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const searchOptions: any = { pageToken: nextPageToken };
+      if (prioritizeContext && userEducationLevel && userEducationLevel !== 'not_specified') {
+        searchOptions.educationLevel = userEducationLevel;
+      }
+      if (strictStreamOnly && primarySubjectId) {
+        searchOptions.subjectId = primarySubjectId;
+        searchOptions.strict = true;
+      }
+
+      const res = await api.searchYouTube(trimmed, searchOptions);
+      setNextPageToken(res.nextPageToken);
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setDiscoveredVideos(prev => {
+          const seen = new Set(prev.map(v => v.id));
+          const fresh = res.data.filter(v => !seen.has(v.id));
+          return [...prev, ...fresh];
+        });
+      }
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const q = query.trim().toLowerCase();
 
@@ -122,7 +163,7 @@ function SearchContent() {
 
         {q && (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 flex-wrap">
               {userEducationLevel && userEducationLevel !== 'not_specified' && (
                 <button
                   onClick={() => setPrioritizeContext(!prioritizeContext)}
@@ -133,6 +174,19 @@ function SearchContent() {
                   }`}
                 >
                   {prioritizeContext ? `Level: ${userEducationLevel}` : 'All Levels'}
+                </button>
+              )}
+
+              {primarySubjectId && (
+                <button
+                  onClick={() => setStrictStreamOnly(!strictStreamOnly)}
+                  className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    strictStreamOnly
+                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                      : 'bg-white border border-slate-300 text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {strictStreamOnly ? `Strict: ${primarySubjectName}` : `Scope: All Subjects`}
                 </button>
               )}
             </div>
@@ -247,6 +301,24 @@ function SearchContent() {
                   <VideoCard key={v.id} video={v} />
                 ))}
               </div>
+              {nextPageToken && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className="px-6 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 text-sm font-semibold shadow-xs inline-flex items-center gap-2 transition-colors disabled:opacity-60"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                        <span>Loading more videos...</span>
+                      </>
+                    ) : (
+                      <span>Load More from YouTube</span>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

@@ -15,7 +15,7 @@ function getApiBase(): string {
   return 'http://localhost:5000/api/v1';
 }
 
-async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
+async function safeFetchRaw<T = any>(endpoint: string, options?: RequestInit): Promise<T | null> {
   try {
     const base = getApiBase();
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -29,31 +29,118 @@ async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T 
       }
     });
     if (!res.ok) return null;
-    const json = await res.json();
-    return json.data ?? json;
+    return (await res.json()) as T;
   } catch {
     // Resilient fallback: network error or backend offline falls back to in-memory store seamlessly
     return null;
   }
 }
 
+async function safeFetch<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
+  const json = await safeFetchRaw<any>(endpoint, options);
+  if (!json) return null;
+  return json.data ?? json;
+}
+
+export interface FeedItem {
+  video: Video;
+  rankScore: number;
+  bayesianRating?: number;
+  reasonCodes?: string[];
+  topic?: Topic;
+}
+
+export interface FeedQueryParams {
+  topics?: string[];
+  subjects?: string[];
+  stream?: string;
+  educationLevel?: string;
+  interests?: string[];
+  pageToken?: string;
+}
+
+export interface FeedResponse {
+  data: FeedItem[];
+  nextPageToken?: string;
+  meta?: {
+    total: number;
+    hydrated?: boolean;
+    source?: string;
+  };
+}
+
 export const api = {
-  // Feed
-  async getFeed(params?: { topics?: string[]; subjects?: string[] }): Promise<any[]> {
-    let queryStr = '';
+  // Feed (Stream-strict + dynamic YouTube hydration + pagination)
+  async getFeedPaginated(params?: FeedQueryParams): Promise<FeedResponse> {
+    const queryParts: string[] = [];
     if (params?.topics && params.topics.length > 0) {
-      queryStr = `?topics=${encodeURIComponent(params.topics.join(','))}`;
-    } else if (params?.subjects && params.subjects.length > 0) {
-      queryStr = `?subjects=${encodeURIComponent(params.subjects.join(','))}`;
+      queryParts.push(`topics=${encodeURIComponent(params.topics.join(','))}`);
     }
-    const remote = await safeFetch<any[]>(`/feed${queryStr}`);
-    if (remote && Array.isArray(remote)) return remote;
-    return store.getFocusedFeed().map(item => ({
+    if (params?.subjects && params.subjects.length > 0) {
+      queryParts.push(`subjects=${encodeURIComponent(params.subjects.join(','))}`);
+    }
+    if (params?.stream && params.stream !== 'none') {
+      queryParts.push(`stream=${encodeURIComponent(params.stream)}`);
+    }
+    if (params?.educationLevel && params.educationLevel !== 'not_specified') {
+      queryParts.push(`educationLevel=${encodeURIComponent(params.educationLevel)}`);
+    }
+    if (params?.interests && params.interests.length > 0) {
+      queryParts.push(`interests=${encodeURIComponent(params.interests.join(','))}`);
+    }
+    if (params?.pageToken) {
+      queryParts.push(`pageToken=${encodeURIComponent(params.pageToken)}`);
+    }
+
+    const queryStr = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+    const remote = await safeFetchRaw<FeedResponse>(`/feed${queryStr}`);
+
+    if (remote && Array.isArray(remote.data)) {
+      remote.data.forEach(item => {
+        if (item?.video) {
+          store.addDiscoveredVideo(item.video);
+        }
+      });
+      return remote;
+    }
+
+    // Strict local fallback if backend is offline
+    const allTopics = store.getTopics();
+    let localItems = store.getFocusedFeed().map(item => ({
       video: item.video,
       rankScore: item.rankScore,
       bayesianRating: calculateBayesianRating(item.video.ratingAverage, item.video.ratingCount),
+      reasonCodes: item.reasonCodes,
       topic: item.topic
     }));
+
+    if (params?.topics && params.topics.length > 0) {
+      const topicSet = new Set(params.topics);
+      localItems = localItems.filter(
+        item =>
+          topicSet.has(item.video.primaryTopicId) ||
+          item.video.secondaryTopicIds?.some(st => topicSet.has(st))
+      );
+    } else if (params?.subjects && params.subjects.length > 0) {
+      const allowedTopicIds = new Set(
+        allTopics.filter(t => params.subjects!.includes(t.subjectId)).map(t => t.id)
+      );
+      localItems = localItems.filter(
+        item =>
+          allowedTopicIds.has(item.video.primaryTopicId) ||
+          item.video.secondaryTopicIds?.some(st => allowedTopicIds.has(st))
+      );
+    }
+
+    return {
+      data: localItems,
+      meta: { total: localItems.length, hydrated: false, source: 'local_fallback' }
+    };
+  },
+
+  async getFeed(params?: FeedQueryParams): Promise<FeedItem[]> {
+    const res = await this.getFeedPaginated(params);
+    return res.data;
   },
 
   // Subjects
@@ -140,7 +227,14 @@ export const api = {
   // Dynamic YouTube Discovery (Blueprint §4 & §11)
   async searchYouTube(
     query: string,
-    options?: { pageToken?: string; pageSize?: number; educationLevel?: string; subjectId?: string }
+    options?: {
+      pageToken?: string;
+      pageSize?: number;
+      educationLevel?: string;
+      subjectId?: string;
+      topicId?: string;
+      strict?: boolean;
+    }
   ): Promise<{
     data: Video[];
     nextPageToken?: string;
@@ -148,13 +242,15 @@ export const api = {
     source: string;
     cached: boolean;
   }> {
-    let queryParams: string[] = [`q=${encodeURIComponent(query)}`];
+    const queryParams: string[] = [`q=${encodeURIComponent(query)}`];
     if (options?.pageToken) queryParams.push(`pageToken=${encodeURIComponent(options.pageToken)}`);
     if (options?.pageSize) queryParams.push(`pageSize=${encodeURIComponent(options.pageSize.toString())}`);
     if (options?.educationLevel) queryParams.push(`educationLevel=${encodeURIComponent(options.educationLevel)}`);
     if (options?.subjectId) queryParams.push(`subjectId=${encodeURIComponent(options.subjectId)}`);
+    if (options?.topicId) queryParams.push(`topicId=${encodeURIComponent(options.topicId)}`);
+    if (options?.strict) queryParams.push(`strict=true`);
 
-    const remote = await safeFetch<any>(`/discover/search?${queryParams.join('&')}`);
+    const remote = await safeFetchRaw<any>(`/discover/search?${queryParams.join('&')}`);
     if (remote && Array.isArray(remote.data)) {
       remote.data.forEach((v: Video) => store.addDiscoveredVideo(v));
       return remote;
@@ -162,12 +258,21 @@ export const api = {
 
     // Local client-side fallback
     const q = query.toLowerCase().trim();
+    const allTopics = store.getTopics();
     const all = store.getVideos();
-    const matched = all.filter(v => 
-      v.title.toLowerCase().includes(q) || 
+    let matched = all.filter(v =>
+      v.title.toLowerCase().includes(q) ||
       v.description.toLowerCase().includes(q) ||
       (v.topicCoverage && v.topicCoverage.some(tc => tc.conceptName.toLowerCase().includes(q)))
     );
+    if (options?.strict && options?.subjectId) {
+      const allowedTopicIds = new Set(
+        allTopics.filter(t => t.subjectId === options.subjectId).map(t => t.id)
+      );
+      matched = matched.filter(
+        v => allowedTopicIds.has(v.primaryTopicId) || v.secondaryTopicIds?.some(st => allowedTopicIds.has(st))
+      );
+    }
     return {
       data: matched,
       totalResults: matched.length,
@@ -198,7 +303,10 @@ export const api = {
   // Videos
   async getVideo(id: string): Promise<Video | null> {
     const remote = await safeFetch<Video>(`/videos/${id}`);
-    if (remote) return remote;
+    if (remote) {
+      store.addDiscoveredVideo(remote);
+      return remote;
+    }
     return store.getVideoById(id) || null;
   },
 
