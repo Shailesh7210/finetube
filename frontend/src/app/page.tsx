@@ -9,6 +9,7 @@ import { store } from '@/lib/store';
 import { formatDuration } from '@/lib/utils';
 import { Reveal } from '@/components/Reveal';
 import { Logo } from '@/components/Logo';
+import { HeroTopicAnimation } from '@/components/HeroTopicAnimation';
 
 const KINETIC_SUBJECTS = ['Physics', 'Medicine', 'History', 'Calculus', 'Code'];
 
@@ -237,34 +238,42 @@ export default function LandingPage() {
                 key={currentSlide.id}
                 className="rounded-3xl bg-white border border-slate-200/90 shadow-xl shadow-slate-200/70 p-5 space-y-4 animate-fade-in-up"
               >
-                {/* Video Stage */}
-                <div className="relative aspect-video rounded-2xl bg-gradient-to-br from-indigo-50 via-sky-50 to-slate-100 border border-slate-200/80 flex flex-col justify-between p-5 overflow-hidden">
-                  <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full bg-white/90 border border-slate-200 text-xs font-semibold text-indigo-700 shadow-2xs">
+                {/* Animated Topic Video Stage */}
+                <Link
+                  href={`/search?q=${encodeURIComponent(currentSlide.query)}`}
+                  className="relative aspect-video rounded-2xl bg-gradient-to-br from-slate-50 via-white to-indigo-50/40 border border-slate-200/90 flex flex-col justify-between overflow-hidden group block"
+                  aria-label={`Explore ${currentSlide.title}`}
+                >
+                  {/* Topic-Specific Animated Visualization */}
+                  <div className="absolute inset-0">
+                    <HeroTopicAnimation topicId={currentSlide.id} />
+                  </div>
+
+                  {/* Top Stage Overlay Chips */}
+                  <div className="relative z-10 flex items-center justify-between p-3.5 pointer-events-none">
+                    <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur-xs border border-slate-200 text-xs font-semibold text-indigo-700 shadow-2xs">
                       {currentSlide.subject}
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg bg-white/90 border border-slate-200 text-xs font-mono font-semibold text-slate-800">
+                    <span className="px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-xs border border-slate-200 text-xs font-mono font-semibold text-slate-800">
                       {currentSlide.duration}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-center my-auto">
-                    <Link
-                      href={`/search?q=${encodeURIComponent(currentSlide.query)}`}
-                      className="w-16 h-16 rounded-full bg-indigo-600 hover:bg-indigo-700 hover:scale-105 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 transition-all"
-                      aria-label={`Search ${currentSlide.title}`}
-                    >
-                      <Play className="w-6 h-6 fill-current ml-0.5" />
-                    </Link>
+                  {/* Subtle Hover Play Action (Keeps Topic Animation Unobstructed) */}
+                  <div className="relative z-10 flex items-center justify-center my-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <span className="px-4 py-2.5 rounded-full bg-slate-900/90 text-white text-xs font-semibold inline-flex items-center gap-2 shadow-lg backdrop-blur-xs">
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Explore Topic</span>
+                    </span>
                   </div>
 
                   {/* Animated Playback Progress */}
-                  <div className="space-y-1.5">
+                  <div className="relative z-10 px-4 pb-3 pt-1">
                     <div className="w-full h-1.5 rounded-full bg-slate-200/90 overflow-hidden">
                       <div className="h-full bg-indigo-600 rounded-full animate-progress-flow" />
                     </div>
                   </div>
-                </div>
+                </Link>
 
                 {/* Card Footer Meta */}
                 <div className="flex items-center justify-between gap-4 px-1">
