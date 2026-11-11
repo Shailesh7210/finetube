@@ -1241,24 +1241,52 @@ app.post('/api/v1/topics', (req: Request, res: Response) => {
   res.status(201).json({ data: newTopic });
 });
 
-app.get('/api/v1/topics/:slug', (req: Request, res: Response) => {
+app.get('/api/v1/topics/:slug', async (req: Request, res: Response) => {
   const paramSlug = (Array.isArray(req.params.slug) ? req.params.slug[0] : req.params.slug) as string;
   const topic = taxonomyRegistry.findTopicByIdOrSlug(paramSlug) || topics.find(t => t.slug === paramSlug || t.id === paramSlug);
   if (!topic) return res.status(404).json({ error: 'Topic not found' });
-  const topicVideos = videos.filter(v => v.primaryTopicId === topic.id);
+
+  let topicVideos = videos.filter(
+    v =>
+      (v.primaryTopicId === topic.id || (v.secondaryTopicIds && v.secondaryTopicIds.includes(topic.id))) &&
+      isEducationalAndNotShort(v, { filterShorts: true })
+  );
+
+  if (topicVideos.length < 4) {
+    try {
+      const searchRes = await youtubeService.searchEducationalVideos(`${topic.name} lecture`, {
+        pageSize: 8,
+        topicId: topic.id,
+        subjectId: topic.subjectId,
+        educationLevel: topic.educationLevel,
+        strictSubjectFilter: true,
+        filterShorts: true
+      });
+      if (searchRes.data.length > 0) {
+        upsertDiscoveredVideos(searchRes.data);
+        topicVideos = videos.filter(
+          v =>
+            (v.primaryTopicId === topic.id || (v.secondaryTopicIds && v.secondaryTopicIds.includes(topic.id))) &&
+            isEducationalAndNotShort(v, { filterShorts: true })
+        );
+      }
+    } catch {
+      // Non-fatal fallback to existing topicVideos
+    }
+  }
+
   res.json({ data: { topic, videos: topicVideos } });
 });
 
-// Videos
-app.get('/api/v1/videos/:id', async (req: Request, res: Response) => {
-  const targetId = String(req.params.id);
+async function resolveOrFetchVideo(videoId: string): Promise<any | null> {
+  if (!videoId) return null;
   let video: any =
-    videos.find(v => v.id === targetId) ||
-    videos.find(v => v.providerVideoId === targetId);
+    videos.find(v => v.id === videoId) ||
+    videos.find(v => v.providerVideoId === videoId);
 
   if (!video && mongoose.connection.readyState === 1) {
     try {
-      video = await VideoModel.findOne({ $or: [{ id: targetId }, { providerVideoId: targetId }] }).lean();
+      video = await VideoModel.findOne({ $or: [{ id: videoId }, { providerVideoId: videoId }] }).lean();
       if (video) {
         upsertDiscoveredVideos([video as YouTubeSearchResult]);
       }
@@ -1268,12 +1296,20 @@ app.get('/api/v1/videos/:id', async (req: Request, res: Response) => {
   }
 
   if (!video) {
-    const discovered = await youtubeService.fetchVideoById(targetId);
+    const discovered = await youtubeService.fetchVideoById(videoId);
     if (discovered) {
       upsertDiscoveredVideos([discovered]);
       video = discovered;
     }
   }
+
+  return video || null;
+}
+
+// Videos
+app.get('/api/v1/videos/:id', async (req: Request, res: Response) => {
+  const targetId = String(req.params.id);
+  const video = await resolveOrFetchVideo(targetId);
 
   if (!video) return res.status(404).json({ error: 'Video not found' });
   res.json({ data: video });
@@ -1693,7 +1729,7 @@ app.post('/api/v1/admin/backups/:fileName/restore', (req: Request, res: Response
 });
 
 // AI & Video Ingestion (Blueprint Section 4.2, 8.6, 13.2, 20.1)
-app.post('/api/v1/ai/ask', (req: Request, res: Response) => {
+app.post('/api/v1/ai/ask', async (req: Request, res: Response) => {
   const { videoId, question } = req.body;
   if (!videoId || !question) {
     return res.status(400).json({ error: 'videoId and question are required' });
@@ -1707,7 +1743,7 @@ app.post('/api/v1/ai/ask', (req: Request, res: Response) => {
     });
   }
 
-  const video = videos.find(v => v.id === videoId);
+  const video = await resolveOrFetchVideo(String(videoId));
   if (!video) {
     return res.status(404).json({ error: 'Video not found' });
   }
@@ -1716,7 +1752,7 @@ app.post('/api/v1/ai/ask', (req: Request, res: Response) => {
   res.json({ data: result });
 });
 
-app.post('/api/v1/ai/generate-notes', (req: Request, res: Response) => {
+app.post('/api/v1/ai/generate-notes', async (req: Request, res: Response) => {
   const { videoId } = req.body;
 
   // Blueprint §20.1 & §21: Quota Enforcement
@@ -1727,7 +1763,7 @@ app.post('/api/v1/ai/generate-notes', (req: Request, res: Response) => {
     });
   }
 
-  const video = videos.find(v => v.id === videoId);
+  const video = await resolveOrFetchVideo(String(videoId));
   if (!video) {
     return res.status(404).json({ error: 'Video not found' });
   }
@@ -1737,9 +1773,9 @@ app.post('/api/v1/ai/generate-notes', (req: Request, res: Response) => {
 });
 
 // Blueprint Section 13.0: Grounded Concept Quiz
-app.post('/api/v1/ai/create-quiz', (req: Request, res: Response) => {
+app.post('/api/v1/ai/create-quiz', async (req: Request, res: Response) => {
   const { videoId } = req.body;
-  const video = videos.find(v => v.id === videoId);
+  const video = await resolveOrFetchVideo(String(videoId));
   if (!video) {
     return res.status(404).json({ error: 'Video not found' });
   }

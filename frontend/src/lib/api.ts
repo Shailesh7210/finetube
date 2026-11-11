@@ -216,8 +216,11 @@ export const api = {
   },
 
   async getTopicBySlug(slug: string): Promise<{ topic: Topic; videos: Video[] } | null> {
-    const remote = await safeFetch<{ topic: Topic; videos: Video[] }>(`/topics/${slug}`);
-    if (remote) return remote;
+    const remote = await safeFetch<{ topic: Topic; videos: Video[] }>(`/topics/${encodeURIComponent(slug)}`);
+    if (remote && Array.isArray(remote.videos)) {
+      remote.videos.forEach(v => store.addDiscoveredVideo(v));
+      return remote;
+    }
     const topic = store.getTopicBySlug(slug);
     if (!topic) return null;
     const videos = store.getVideos(topic.id);
