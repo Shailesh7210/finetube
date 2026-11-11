@@ -1,13 +1,15 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
+import { VideoModel } from './models/Video.js';
 import { calculateTopicScore } from './services/rankingService.js';
 import { answerGroundedQuestion, generateStructuredNotesForVideo, generateConceptQuizForVideo, queueVideoIngestion, onIngestionComplete, jobsQueue, classifyVideoMetadata } from './services/aiService.js';
 import { getUserUsage, recordAiQuery, recordAiNote, recordSandboxRun, setUserTier, getSystemUnitEconomics } from './services/budgetService.js';
 import { createSnapshot, listSnapshots, restoreSnapshot } from './services/backupService.js';
 import { taxonomyRegistry, UNIVERSAL_SUBJECTS, UNIVERSAL_TOPICS } from './services/taxonomyService.js';
-import { youtubeService } from './services/youtubeService.js';
+import { youtubeService, isEducationalAndNotShort, YouTubeSearchResult } from './services/youtubeService.js';
 
 dotenv.config();
 
@@ -880,63 +882,261 @@ app.post('/api/v1/admin/reports/:id/resolve', (req: Request, res: Response) => {
   res.json({ success: true, data: report });
 });
 
-// Focused Feed (Blueprint Section 5.4 & 12 - Personalized by Topics/Subjects)
-app.get('/api/v1/feed', (req: Request, res: Response) => {
-  const { topics: queryTopics, subjects: querySubjects } = req.query;
-  let targetVideos = videos;
+function upsertDiscoveredVideos(items: YouTubeSearchResult[]) {
+  if (!Array.isArray(items) || items.length === 0) return;
 
-  if (queryTopics && typeof queryTopics === 'string') {
-    const topicList = queryTopics.split(',').map(s => s.trim()).filter(Boolean);
-    if (topicList.length > 0) {
-      const matched = videos.filter(v => topicList.includes(v.primaryTopicId) || (v.secondaryTopicIds && v.secondaryTopicIds.some(st => topicList.includes(st))));
-      if (matched.length > 0) targetVideos = matched;
+  for (const discoveredVideo of items) {
+    const existingIdx = videos.findIndex(v => v.id === discoveredVideo.id);
+    if (existingIdx === -1) {
+      videos.unshift(discoveredVideo as any);
     }
-  } else if (querySubjects && typeof querySubjects === 'string') {
-    const subjectList = querySubjects.split(',').map(s => s.trim()).filter(Boolean);
-    if (subjectList.length > 0) {
-      const validTopicIds = topics.filter(t => subjectList.includes(t.subjectId)).map(t => t.id);
-      const matched = videos.filter(v => validTopicIds.includes(v.primaryTopicId));
-      if (matched.length > 0) targetVideos = matched;
+
+    if (mongoose.connection.readyState === 1) {
+      VideoModel.updateOne(
+        { id: discoveredVideo.id },
+        { $set: discoveredVideo },
+        { upsert: true }
+      ).catch(() => {});
+    }
+  }
+}
+
+function resolveSubjectsFromStream(stream?: string): string[] {
+  if (!stream || !stream.trim()) return [];
+  const norm = stream.trim().toLowerCase();
+  return taxonomyRegistry
+    .getAllSubjects()
+    .filter(s => {
+      const streamMatch = (s.streams || []).some(st => st.toLowerCase().includes(norm) || norm.includes(st.toLowerCase()));
+      const categoryMatch = s.category.toLowerCase() === norm || s.name.toLowerCase() === norm;
+      return streamMatch || categoryMatch;
+    })
+    .map(s => s.id);
+}
+
+interface FeedHydrationRequest {
+  query: string;
+  subjectId?: string;
+  topicId?: string;
+  educationLevel?: string;
+}
+
+function buildFeedHydrationQueries(params: {
+  topicList: string[];
+  subjectList: string[];
+  stream?: string;
+  educationLevel?: string;
+  interestList: string[];
+}): FeedHydrationRequest[] {
+  const { topicList, subjectList, stream, educationLevel, interestList } = params;
+  const requests: FeedHydrationRequest[] = [];
+  const levelPrefix = educationLevel ? `${educationLevel} ` : '';
+  const streamSuffix = stream && !levelPrefix.toLowerCase().includes(stream.toLowerCase()) ? ` ${stream}` : '';
+
+  if (topicList.length > 0) {
+    for (const tid of topicList.slice(0, 3)) {
+      const topicObj = topics.find(t => t.id === tid);
+      const topicLabel = topicObj ? topicObj.name : tid.replace(/_/g, ' ');
+      requests.push({
+        query: `${levelPrefix}${topicLabel} lecture`.trim(),
+        subjectId: topicObj?.subjectId,
+        topicId: tid,
+        educationLevel: educationLevel || topicObj?.educationLevel
+      });
+    }
+    return requests;
+  }
+
+  if (subjectList.length > 0) {
+    for (const sid of subjectList.slice(0, 3)) {
+      const subj = taxonomyRegistry.getSubjectById(sid);
+      const subjName = subj ? subj.name : sid.replace(/_/g, ' ');
+      const topTopic = taxonomyRegistry.filterTopics({ subjectId: sid })[0];
+      const topicHint = topTopic ? ` ${topTopic.name}` : '';
+      requests.push({
+        query: `${levelPrefix}${subjName}${streamSuffix}${topicHint} lecture`.trim(),
+        subjectId: sid,
+        topicId: topTopic?.id,
+        educationLevel
+      });
+    }
+    return requests;
+  }
+
+  if (interestList.length > 0) {
+    for (const interest of interestList.slice(0, 2)) {
+      requests.push({
+        query: `${levelPrefix}${interest}${streamSuffix} lecture`.trim(),
+        educationLevel
+      });
+    }
+    return requests;
+  }
+
+  if (stream) {
+    requests.push({
+      query: `${levelPrefix}${stream} educational lecture`.trim(),
+      educationLevel
+    });
+  }
+
+  return requests;
+}
+
+// Focused Feed (Blueprint Section 5.4 & 12 - Personalized & Stream-Strict via Dynamic YouTube Hydration)
+app.get('/api/v1/feed', async (req: Request, res: Response) => {
+  const {
+    topics: queryTopics,
+    subjects: querySubjects,
+    stream,
+    educationLevel,
+    interests,
+    pageToken,
+    hydrate
+  } = req.query;
+
+  const topicList =
+    typeof queryTopics === 'string' ? queryTopics.split(',').map(s => s.trim()).filter(Boolean) : [];
+  let subjectList =
+    typeof querySubjects === 'string' ? querySubjects.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const streamStr = typeof stream === 'string' && stream.trim() ? stream.trim() : undefined;
+  const levelStr =
+    typeof educationLevel === 'string' && educationLevel.trim() ? educationLevel.trim() : undefined;
+  const interestList =
+    typeof interests === 'string' ? interests.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const pageTokenStr = typeof pageToken === 'string' && pageToken.trim() ? pageToken.trim() : undefined;
+
+  if (subjectList.length === 0 && topicList.length === 0 && streamStr) {
+    subjectList = resolveSubjectsFromStream(streamStr);
+  }
+
+  const hasExplicitScope = topicList.length > 0 || subjectList.length > 0 || !!streamStr;
+
+  const filterStrictly = (sourceList: any[]) => {
+    let filtered = sourceList.filter(v => isEducationalAndNotShort(v, { filterShorts: true }));
+
+    if (topicList.length > 0) {
+      filtered = filtered.filter(
+        v =>
+          topicList.includes(v.primaryTopicId) ||
+          (v.secondaryTopicIds && v.secondaryTopicIds.some((st: string) => topicList.includes(st)))
+      );
+    } else if (subjectList.length > 0) {
+      filtered = filtered.filter(v =>
+        subjectList.some(sid => youtubeService.matchesStrictSubjectFilter(v, sid))
+      );
+    }
+
+    return filtered;
+  };
+
+  let matchedVideos = hasExplicitScope ? filterStrictly(videos) : videos.filter(v => isEducationalAndNotShort(v));
+  let didHydrate = false;
+  let hydrationSource: string = 'catalog';
+  let nextPageToken: string | undefined;
+
+  const shouldHydrate =
+    hydrate !== 'false' && (hasExplicitScope || interestList.length > 0) && (matchedVideos.length < 6 || !!pageTokenStr);
+
+  if (shouldHydrate) {
+    const hydrationRequests = buildFeedHydrationQueries({
+      topicList,
+      subjectList,
+      stream: streamStr,
+      educationLevel: levelStr,
+      interestList
+    });
+
+    if (hydrationRequests.length > 0) {
+      try {
+        const searchResponses = await Promise.all(
+          hydrationRequests.map(hr =>
+            youtubeService.searchEducationalVideos(hr.query, {
+              pageSize: 8,
+              pageToken: pageTokenStr,
+              educationLevel: hr.educationLevel,
+              subjectId: hr.subjectId,
+              topicId: hr.topicId,
+              strictSubjectFilter: !!(hr.subjectId || hr.topicId),
+              filterShorts: true
+            })
+          )
+        );
+
+        const discoveredAll = searchResponses.flatMap(r => r.data);
+        nextPageToken = searchResponses.find(r => r.nextPageToken)?.nextPageToken;
+        if (discoveredAll.length > 0) {
+          didHydrate = true;
+          hydrationSource = searchResponses[0].source;
+          upsertDiscoveredVideos(discoveredAll);
+          matchedVideos = hasExplicitScope ? filterStrictly(videos) : videos.filter(v => isEducationalAndNotShort(v));
+        }
+      } catch (err) {
+        console.warn('Feed YouTube hydration warning:', (err as Error).message);
+      }
     }
   }
 
-  const feed = targetVideos.map(v => {
-    const topic = topics.find(t => t.id === v.primaryTopicId) || { id: v.primaryTopicId, name: 'General', conceptChecklist: [] };
-    const ranking = calculateTopicScore(v, topic);
-    return {
-      video: v,
-      rankScore: ranking.score,
-      bayesianRating: ranking.bayesianRating,
-      topic
-    };
-  }).sort((a, b) => b.rankScore - a.rankScore);
+  // Deduplicate by ID before ranking
+  const uniqueMap = new Map<string, any>();
+  for (const v of matchedVideos) {
+    if (!uniqueMap.has(v.id)) uniqueMap.set(v.id, v);
+  }
 
-  res.json({ data: feed, meta: { total: feed.length } });
+  const feed = Array.from(uniqueMap.values())
+    .map(v => {
+      const topic = topics.find(t => t.id === v.primaryTopicId) || {
+        id: v.primaryTopicId,
+        name: 'General',
+        conceptChecklist: []
+      };
+      const ranking = calculateTopicScore(v, topic);
+      return {
+        video: v,
+        rankScore: ranking.score,
+        bayesianRating: ranking.bayesianRating,
+        topic
+      };
+    })
+    .sort((a, b) => b.rankScore - a.rankScore);
+
+  res.json({
+    data: feed,
+    nextPageToken,
+    meta: {
+      total: feed.length,
+      hydrated: didHydrate,
+      source: hydrationSource,
+      filteredBy: {
+        topics: topicList,
+        subjects: subjectList,
+        stream: streamStr || null
+      }
+    }
+  });
 });
 
 // Blueprint Section 4 & 11: Dynamic YouTube Video Discovery
 app.get('/api/v1/discover/search', async (req: Request, res: Response) => {
-  const { q, pageToken, pageSize, educationLevel, subjectId } = req.query;
+  const { q, pageToken, pageSize, educationLevel, subjectId, topicId, strict } = req.query;
   if (!q || typeof q !== 'string' || !q.trim()) {
     return res.status(400).json({ error: 'Search query "q" is required' });
   }
 
   try {
     const size = pageSize ? parseInt(pageSize as string, 10) : 12;
+    const strictSubjectFilter = strict === 'true' || strict === '1';
     const result = await youtubeService.searchEducationalVideos(q, {
       pageToken: typeof pageToken === 'string' ? pageToken : undefined,
       pageSize: isNaN(size) ? 12 : size,
       educationLevel: typeof educationLevel === 'string' ? educationLevel : undefined,
-      subjectId: typeof subjectId === 'string' ? subjectId : undefined
+      subjectId: typeof subjectId === 'string' ? subjectId : undefined,
+      topicId: typeof topicId === 'string' ? topicId : undefined,
+      strictSubjectFilter,
+      filterShorts: true
     });
 
-    // Auto-upsert discovered videos into live video catalog for seamless interactive playback
-    result.data.forEach(discoveredVideo => {
-      const existingIdx = videos.findIndex(v => v.providerVideoId === discoveredVideo.providerVideoId || v.id === discoveredVideo.id);
-      if (existingIdx === -1) {
-        videos.unshift(discoveredVideo as any);
-      }
-    });
+    upsertDiscoveredVideos(result.data);
 
     res.json(result);
   } catch (error: any) {
@@ -1036,8 +1236,31 @@ app.get('/api/v1/topics/:slug', (req: Request, res: Response) => {
 });
 
 // Videos
-app.get('/api/v1/videos/:id', (req: Request, res: Response) => {
-  const video = videos.find(v => v.id === req.params.id);
+app.get('/api/v1/videos/:id', async (req: Request, res: Response) => {
+  const targetId = String(req.params.id);
+  let video: any =
+    videos.find(v => v.id === targetId) ||
+    videos.find(v => v.providerVideoId === targetId);
+
+  if (!video && mongoose.connection.readyState === 1) {
+    try {
+      video = await VideoModel.findOne({ $or: [{ id: targetId }, { providerVideoId: targetId }] }).lean();
+      if (video) {
+        upsertDiscoveredVideos([video as YouTubeSearchResult]);
+      }
+    } catch {
+      // Non-fatal DB read fallback
+    }
+  }
+
+  if (!video) {
+    const discovered = await youtubeService.fetchVideoById(targetId);
+    if (discovered) {
+      upsertDiscoveredVideos([discovered]);
+      video = discovered;
+    }
+  }
+
   if (!video) return res.status(404).json({ error: 'Video not found' });
   res.json({ data: video });
 });

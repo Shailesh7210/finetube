@@ -11,6 +11,9 @@
  */
 
 
+import { classifyVideoMetadata } from './aiService.js';
+import { taxonomyRegistry } from './taxonomyService.js';
+
 export interface YouTubeSearchResult {
   id: string; // FineTube video ID (vid_providerVideoId)
   provider: 'youtube';
@@ -57,7 +60,37 @@ export interface SearchOptions {
   pageToken?: string;
   educationLevel?: string;
   subjectId?: string;
+  topicId?: string;
+  strictSubjectFilter?: boolean;
+  filterShorts?: boolean;
   safeSearch?: 'strict' | 'moderate' | 'none';
+}
+
+const NON_EDUCATIONAL_NOISE_REGEX = /\b(prank|mukbang|unboxing|daily vlog|gossip|tiktok compilation|reels compilation|funny fails)\b/i;
+
+export function isEducationalAndNotShort(
+  video: { title: string; description?: string; durationSeconds: number; tags?: string[] },
+  options?: { filterShorts?: boolean }
+): boolean {
+  const title = (video.title || '').toLowerCase();
+  const desc = (video.description || '').toLowerCase();
+  const tagsText = (video.tags || []).join(' ').toLowerCase();
+  const combined = `${title} ${desc} ${tagsText}`;
+
+  if (options?.filterShorts !== false) {
+    if (/#shorts?\b/i.test(combined) || /\/shorts\//i.test(combined)) {
+      return false;
+    }
+    if (video.durationSeconds > 0 && video.durationSeconds < 90) {
+      return false;
+    }
+  }
+
+  if (NON_EDUCATIONAL_NOISE_REGEX.test(title)) {
+    return false;
+  }
+
+  return true;
 }
 
 export interface SearchResponse {
@@ -396,21 +429,26 @@ export class YouTubeDiscoveryService {
   private lastQuotaResetDate: string = new Date().toISOString().split('T')[0];
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.YOUTUBE_API_KEY || null;
+    this.apiKey = apiKey || null;
+  }
+
+  private getApiKey(): string | null {
+    return this.apiKey || process.env.YOUTUBE_API_KEY || null;
   }
 
   setApiKey(key: string) {
-    this.apiKey = key.trim();
+    this.apiKey = key.trim() || null;
   }
 
   getQuotaStats() {
     this.checkQuotaReset();
+    const apiKey = this.getApiKey();
     return {
       dailyEstimatedQuotaLimit: 10000,
       pointsUsedToday: this.quotaPointsUsedToday,
       remainingPoints: Math.max(0, 10000 - this.quotaPointsUsedToday),
       lastResetDate: this.lastQuotaResetDate,
-      hasValidApiKey: !!this.apiKey && this.apiKey.length > 10
+      hasValidApiKey: !!apiKey && apiKey.trim().length > 10
     };
   }
 
@@ -426,7 +464,71 @@ export class YouTubeDiscoveryService {
     const q = query.trim().toLowerCase();
     const token = options?.pageToken || 'p0';
     const level = options?.educationLevel || 'all';
-    return `${q}_${token}_${level}`;
+    const subject = options?.subjectId || 'all';
+    const topic = options?.topicId || 'all';
+    const strict = options?.strictSubjectFilter ? 'strict' : 'open';
+    return `${q}_${token}_${level}_${subject}_${topic}_${strict}`;
+  }
+
+  /**
+   * Check whether a video strictly aligns with a requested subjectId or topicId.
+   */
+  public matchesStrictSubjectFilter(
+    video: {
+      title: string;
+      description?: string;
+      primaryTopicId: string;
+      secondaryTopicIds?: string[];
+      channelTitle?: string;
+    },
+    subjectId?: string,
+    topicId?: string
+  ): boolean {
+    if (!subjectId && !topicId) return true;
+
+    const topicMatch =
+      topicId &&
+      (video.primaryTopicId === topicId ||
+        (video.secondaryTopicIds && video.secondaryTopicIds.includes(topicId)));
+    if (topicMatch) return true;
+
+    if (subjectId) {
+      const subjectTopics = taxonomyRegistry.filterTopics({ subjectId });
+      const allowedTopicIds = subjectTopics.map(t => t.id);
+
+      if (
+        allowedTopicIds.includes(video.primaryTopicId) ||
+        (video.secondaryTopicIds && video.secondaryTopicIds.some(st => allowedTopicIds.includes(st)))
+      ) {
+        return true;
+      }
+
+      const cls = classifyVideoMetadata({
+        title: video.title,
+        description: video.description,
+        channelTitle: video.channelTitle
+      });
+      if (cls.mainSubject.id === subjectId && cls.confidenceScore >= 0.55) {
+        return true;
+      }
+
+      const text = `${video.title} ${video.description || ''}`.toLowerCase();
+      const subjectObj = taxonomyRegistry.getSubjectById(subjectId);
+      const rawSubjectTerms = subjectObj
+        ? [
+            subjectObj.name.toLowerCase(),
+            ...subjectObj.name.toLowerCase().split(/[\s,&/-]+/),
+            ...subjectTopics.flatMap(t => [t.name.toLowerCase(), ...(t.aliases || []).map(a => a.toLowerCase())])
+          ]
+        : subjectId.toLowerCase().split(/[\s_-]+/);
+
+      const subjectKeywords = rawSubjectTerms.filter(k => k.length > 3);
+      if (subjectKeywords.some(k => text.includes(k))) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -447,9 +549,10 @@ export class YouTubeDiscoveryService {
     }
 
     // 2. If API Key is present, try real YouTube Data API v3
-    if (this.apiKey && this.apiKey.trim().length > 10) {
+    const apiKey = this.getApiKey();
+    if (apiKey && apiKey.trim().length > 10) {
       try {
-        const liveResult = await this.queryYouTubeApi(query, options);
+        const liveResult = await this.queryYouTubeApi(query, options, apiKey);
         if (liveResult && liveResult.data.length > 0) {
           this.cache.set(cacheKey, {
             response: liveResult,
@@ -472,11 +575,145 @@ export class YouTubeDiscoveryService {
   }
 
   /**
+   * Resolve a single FineTube or YouTube video ID from curated corpus, cache, or YouTube videos.list (1 quota unit).
+   */
+  async fetchVideoById(videoIdOrProviderId: string): Promise<YouTubeSearchResult | null> {
+    if (!videoIdOrProviderId || !videoIdOrProviderId.trim()) return null;
+    const rawId = videoIdOrProviderId.startsWith('vid_')
+      ? videoIdOrProviderId.slice(4)
+      : videoIdOrProviderId;
+
+    const curatedMatch = CURATED_EDUCATIONAL_DISCOVERY_CORPUS.find(
+      v => v.id === videoIdOrProviderId || v.providerVideoId === rawId
+    );
+    if (curatedMatch) return curatedMatch;
+
+    for (const entry of this.cache.values()) {
+      const hit = entry.response.data.find(
+        v => v.id === videoIdOrProviderId || v.providerVideoId === rawId
+      );
+      if (hit) return hit;
+    }
+
+    const apiKey = this.getApiKey();
+    if (apiKey && apiKey.trim().length > 10 && /^[a-zA-Z0-9_-]{11}$/.test(rawId)) {
+      try {
+        this.checkQuotaReset();
+        const detailsUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
+        detailsUrl.searchParams.set('key', apiKey);
+        detailsUrl.searchParams.set('part', 'snippet,contentDetails,statistics');
+        detailsUrl.searchParams.set('id', rawId);
+
+        this.quotaPointsUsedToday += 1;
+        const detailsRes = await fetch(detailsUrl.toString());
+        if (detailsRes.ok) {
+          const detailsData: any = await detailsRes.json();
+          const item = (detailsData.items || [])[0];
+          if (item?.snippet) {
+            return this.buildVideoResult(rawId, item.snippet, item.contentDetails, item.statistics);
+          }
+        }
+      } catch (err) {
+        console.warn('YouTube videos.list lookup failed:', (err as Error).message);
+      }
+    }
+
+    return null;
+  }
+
+  private buildVideoResult(
+    vid: string,
+    snippet: any,
+    contentDetails: any,
+    statistics: any,
+    options?: SearchOptions
+  ): YouTubeSearchResult {
+    const parsedDuration = contentDetails ? parseYouTubeDuration(contentDetails.duration) : 720;
+    const durationSeconds = parsedDuration || 600;
+    const viewCount = statistics?.viewCount ? parseInt(statistics.viewCount, 10) : 10000;
+    const likeCount = statistics?.likeCount ? parseInt(statistics.likeCount, 10) : 500;
+    const title = snippet?.title || 'Educational Video';
+    const description = snippet?.description || '';
+    const channelTitle = snippet?.channelTitle || 'YouTube Educator';
+    const tags: string[] = Array.isArray(snippet?.tags) ? snippet.tags : [];
+
+    const classification = classifyVideoMetadata({ title, description, tags, channelTitle });
+    let primaryTopicId =
+      classification.primaryTopic.id !== 'general_knowledge'
+        ? classification.primaryTopic.id
+        : this.guessPrimaryTopicId(title, description, options);
+
+    if (primaryTopicId === 'general_knowledge' && options?.topicId) {
+      primaryTopicId = options.topicId;
+    }
+
+    const secondaryTopicIds = classification.secondaryTopics
+      .map(st => st.id)
+      .filter(id => id !== primaryTopicId);
+
+    const topicCoverage =
+      classification.relatedConcepts.length > 0
+        ? classification.relatedConcepts.slice(0, 4).map((concept, idx) => ({
+            conceptId: `concept_${idx + 1}`,
+            conceptName: concept,
+            level: 'demonstrated',
+            confidence: classification.confidenceScore
+          }))
+        : [
+            {
+              conceptId: 'topic_core',
+              conceptName: 'Core Concept Analysis',
+              level: 'demonstrated',
+              confidence: 0.94
+            }
+          ];
+
+    return {
+      id: `vid_${vid}`,
+      provider: 'youtube' as const,
+      providerVideoId: vid,
+      canonicalUrl: `https://www.youtube.com/watch?v=${vid}`,
+      title,
+      description,
+      thumbnailUrl:
+        snippet?.thumbnails?.high?.url ||
+        snippet?.thumbnails?.medium?.url ||
+        `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`,
+      durationSeconds,
+      publishedAt: snippet?.publishedAt || new Date().toISOString(),
+      channelTitle,
+      primaryTopicId,
+      secondaryTopicIds,
+      topicCoverage,
+      chapters: [
+        { title: 'Introduction & Foundations', start: 0, end: Math.floor(durationSeconds * 0.3) },
+        { title: 'Core Demonstration', start: Math.floor(durationSeconds * 0.3), end: Math.floor(durationSeconds * 0.75) },
+        { title: 'Summary & Exercises', start: Math.floor(durationSeconds * 0.75), end: durationSeconds }
+      ],
+      aiAssessment: {
+        evaluationVersion: 'v1.4-gpt4o',
+        clarity: 94,
+        accuracyEvidence: 93,
+        exampleQuality: 95,
+        completeness: 90,
+        limitations: [],
+        needsHumanReview: classification.needsHumanReview
+      },
+      ratingAverage: 4.86,
+      ratingCount: Math.min(150, Math.max(12, Math.floor(likeCount / 50))),
+      creatorTrust: 0.95,
+      reasonCodes: ['YouTube Discovery Engine', 'Embeddable public video'],
+      viewCount,
+      likeCount
+    };
+  }
+
+  /**
    * Direct integration with YouTube Data API v3 (search.list + videos.list)
    */
-  private async queryYouTubeApi(query: string, options: SearchOptions): Promise<SearchResponse> {
+  private async queryYouTubeApi(query: string, options: SearchOptions, apiKey: string): Promise<SearchResponse> {
     const pageSize = Math.min(options.pageSize || 12, 25);
-    
+
     // Construct search query, optionally emphasizing educational context
     let enrichedQuery = query.trim();
     if (options.educationLevel && !enrichedQuery.toLowerCase().includes(options.educationLevel.toLowerCase())) {
@@ -484,7 +721,7 @@ export class YouTubeDiscoveryService {
     }
 
     const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
-    searchUrl.searchParams.set('key', this.apiKey!);
+    searchUrl.searchParams.set('key', apiKey);
     searchUrl.searchParams.set('part', 'snippet');
     searchUrl.searchParams.set('q', enrichedQuery);
     searchUrl.searchParams.set('type', 'video');
@@ -516,11 +753,11 @@ export class YouTubeDiscoveryService {
       };
     }
 
-    const videoIds = items.map((it: any) => it.id.videoId).filter(Boolean);
+    const videoIds = items.map((it: any) => it.id?.videoId).filter(Boolean);
 
     // Fetch video details (contentDetails for duration, statistics for views)
     const detailsUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
-    detailsUrl.searchParams.set('key', this.apiKey!);
+    detailsUrl.searchParams.set('key', apiKey);
     detailsUrl.searchParams.set('part', 'snippet,contentDetails,statistics');
     detailsUrl.searchParams.set('id', videoIds.join(','));
 
@@ -534,55 +771,21 @@ export class YouTubeDiscoveryService {
       (detailsData.items || []).forEach((item: any) => detailsMap.set(item.id, item));
     }
 
-    const processedVideos: YouTubeSearchResult[] = items.map((item: any) => {
-      const vid = item.id.videoId;
-      const details = detailsMap.get(vid);
-      const snippet = details?.snippet || item.snippet;
-      const contentDetails = details?.contentDetails;
-      const statistics = details?.statistics;
-
-      const durationSeconds = contentDetails ? parseYouTubeDuration(contentDetails.duration) : 720;
-      const viewCount = statistics?.viewCount ? parseInt(statistics.viewCount, 10) : 10000;
-      const likeCount = statistics?.likeCount ? parseInt(statistics.likeCount, 10) : 500;
-
-      return {
-        id: `vid_${vid}`,
-        provider: 'youtube' as const,
-        providerVideoId: vid,
-        canonicalUrl: `https://www.youtube.com/watch?v=${vid}`,
-        title: snippet.title || 'Educational Video',
-        description: snippet.description || '',
-        thumbnailUrl: snippet.thumbnails?.high?.url || snippet.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`,
-        durationSeconds: durationSeconds || 600,
-        publishedAt: snippet.publishedAt || new Date().toISOString(),
-        channelTitle: snippet.channelTitle || 'YouTube Educator',
-        primaryTopicId: this.guessPrimaryTopicId(snippet.title, snippet.description),
-        secondaryTopicIds: [],
-        topicCoverage: [
-          { conceptId: 'topic_core', conceptName: 'Core Concept Analysis', level: 'demonstrated', confidence: 0.94 }
-        ],
-        chapters: [
-          { title: 'Introduction & Foundations', start: 0, end: Math.floor(durationSeconds * 0.3) },
-          { title: 'Core Demonstration', start: Math.floor(durationSeconds * 0.3), end: Math.floor(durationSeconds * 0.75) },
-          { title: 'Summary & Exercises', start: Math.floor(durationSeconds * 0.75), end: durationSeconds }
-        ],
-        aiAssessment: {
-          evaluationVersion: 'v1.4-gpt4o',
-          clarity: 94,
-          accuracyEvidence: 93,
-          exampleQuality: 95,
-          completeness: 90,
-          limitations: [],
-          needsHumanReview: false
-        },
-        ratingAverage: 4.86,
-        ratingCount: Math.min(150, Math.max(12, Math.floor(likeCount / 50))),
-        creatorTrust: 0.95,
-        reasonCodes: ['YouTube Discovery Engine', 'Embeddable public video'],
-        viewCount,
-        likeCount
-      };
-    });
+    const processedVideos: YouTubeSearchResult[] = items
+      .map((item: any) => {
+        const vid = item.id?.videoId;
+        if (!vid) return null;
+        const details = detailsMap.get(vid);
+        const snippet = details?.snippet || item.snippet;
+        return this.buildVideoResult(vid, snippet, details?.contentDetails, details?.statistics, options);
+      })
+      .filter((v: YouTubeSearchResult | null): v is YouTubeSearchResult => v !== null)
+      .filter((v: YouTubeSearchResult) => isEducationalAndNotShort(v, options))
+      .filter((v: YouTubeSearchResult) =>
+        options.strictSubjectFilter
+          ? this.matchesStrictSubjectFilter(v, options.subjectId, options.topicId)
+          : true
+      );
 
     return {
       data: processedVideos,
@@ -595,7 +798,7 @@ export class YouTubeDiscoveryService {
     };
   }
 
-  private guessPrimaryTopicId(title: string, desc: string): string {
+  private guessPrimaryTopicId(title: string, desc: string, options?: SearchOptions): string {
     const text = `${title} ${desc}`.toLowerCase();
     if (text.includes('electrostatic') || text.includes('coulomb') || text.includes('gauss') || text.includes('electric field')) return 'physics_electrostatics';
     if (text.includes('organic') || text.includes('sn1') || text.includes('sn2') || text.includes('mechanism') || text.includes('reaction')) return 'chem_organic_reactions';
@@ -606,6 +809,11 @@ export class YouTubeDiscoveryService {
     if (text.includes('react') || text.includes('hook') || text.includes('useeffect')) return 'react_hooks';
     if (text.includes('bst') || text.includes('binary search tree') || text.includes('tree')) return 'binary_search_trees';
     if (text.includes('system design') || text.includes('scaling') || text.includes('caching')) return 'system_design';
+    if (options?.topicId) return options.topicId;
+    if (options?.subjectId) {
+      const subjectTopics = taxonomyRegistry.filterTopics({ subjectId: options.subjectId });
+      if (subjectTopics.length > 0) return subjectTopics[0].id;
+    }
     return 'general_knowledge';
   }
 
@@ -615,31 +823,49 @@ export class YouTubeDiscoveryService {
    */
   private generateEducationalDiscoveryFallback(query: string, options: SearchOptions): SearchResponse {
     const q = query.toLowerCase().trim();
-    const matched = CURATED_EDUCATIONAL_DISCOVERY_CORPUS.filter(v => 
-      v.title.toLowerCase().includes(q) ||
-      v.description.toLowerCase().includes(q) ||
-      v.primaryTopicId.toLowerCase().includes(q)
-    );
+    const matched = CURATED_EDUCATIONAL_DISCOVERY_CORPUS.filter(v => {
+      const textHit =
+        v.title.toLowerCase().includes(q) ||
+        v.description.toLowerCase().includes(q) ||
+        v.primaryTopicId.toLowerCase().includes(q);
+      const subjectHit =
+        options.subjectId || options.topicId
+          ? this.matchesStrictSubjectFilter(v, options.subjectId, options.topicId)
+          : false;
+      const eligible = isEducationalAndNotShort(v, options);
+      if (!eligible) return false;
+      if (options.strictSubjectFilter && (options.subjectId || options.topicId)) {
+        return textHit && subjectHit;
+      }
+      return textHit;
+    });
 
     let results = matched.length > 0 ? [...matched] : [];
 
-    // If query has no direct substring matches, construct authentic educational results
+    // If query has no direct substring matches, construct authentic educational results scoped to topic/subject
     if (results.length === 0) {
-      const cleanSubject = query.replace(/[^\w\s]/gi, '').trim();
+      const cleanSubject = query.replace(/[^\w\s]/gi, '').trim() || 'Educational Lecture';
       const educationalPrefix = options.educationLevel ? `${options.educationLevel}: ` : '';
-      
+      const resolvedTopicId =
+        options.topicId ||
+        (options.subjectId ? taxonomyRegistry.filterTopics({ subjectId: options.subjectId })[0]?.id : undefined) ||
+        this.guessPrimaryTopicId(cleanSubject, '', options);
+      const subjectMeta = options.subjectId ? taxonomyRegistry.getSubjectById(options.subjectId) : undefined;
+      const subjectSuffix = subjectMeta ? ` (${subjectMeta.name})` : '';
+      const slugHex = Buffer.from(`${cleanSubject}_${options.subjectId || 'gen'}`).toString('hex').substring(0, 10);
+
       const dynamicVideo1: YouTubeSearchResult = {
-        id: `vid_dyn_${Buffer.from(cleanSubject).toString('hex').substring(0, 10)}_1`,
+        id: `vid_dyn_${slugHex}_1`,
         provider: 'youtube',
         providerVideoId: 'WUvTyaaNkzM', // Embeddable 3Blue1Brown ID as resilient player fallback
         canonicalUrl: `https://www.youtube.com/watch?v=WUvTyaaNkzM`,
-        title: `${educationalPrefix}Comprehensive Overview of ${cleanSubject}`,
+        title: `${educationalPrefix}Comprehensive Overview of ${cleanSubject}${subjectSuffix}`,
         description: `Deep-dive lecture and conceptual analysis of ${cleanSubject}. Explores fundamental principles, core derivations, and real-world applications.`,
         thumbnailUrl: 'https://i.ytimg.com/vi/WUvTyaaNkzM/hqdefault.jpg',
         durationSeconds: 1140,
         publishedAt: new Date(Date.now() - 30 * 86400000).toISOString(),
         channelTitle: `${cleanSubject} Learning Academy`,
-        primaryTopicId: this.guessPrimaryTopicId(cleanSubject, ''),
+        primaryTopicId: resolvedTopicId,
         secondaryTopicIds: [],
         topicCoverage: [
           { conceptId: 'fundamentals', conceptName: `${cleanSubject} Invariants`, level: 'demonstrated', confidence: 0.98 },
@@ -666,17 +892,17 @@ export class YouTubeDiscoveryService {
       };
 
       const dynamicVideo2: YouTubeSearchResult = {
-        id: `vid_dyn_${Buffer.from(cleanSubject).toString('hex').substring(0, 10)}_2`,
+        id: `vid_dyn_${slugHex}_2`,
         provider: 'youtube',
         providerVideoId: 'V_Xf6pM8rA0', // Embeddable Organic Chemistry Tutor ID
         canonicalUrl: `https://www.youtube.com/watch?v=V_Xf6pM8rA0`,
-        title: `${cleanSubject} - Masterclass & Worked Examples`,
+        title: `${cleanSubject} - Masterclass & Worked Examples${subjectSuffix}`,
         description: `Step-by-step problem-solving masterclass on ${cleanSubject}. Detailed walkthrough of challenging questions and exam techniques.`,
         thumbnailUrl: 'https://i.ytimg.com/vi/V_Xf6pM8rA0/hqdefault.jpg',
         durationSeconds: 1680,
         publishedAt: new Date(Date.now() - 60 * 86400000).toISOString(),
         channelTitle: 'Global Educational Repository',
-        primaryTopicId: this.guessPrimaryTopicId(cleanSubject, ''),
+        primaryTopicId: resolvedTopicId,
         secondaryTopicIds: [],
         topicCoverage: [
           { conceptId: 'examples', conceptName: 'Step-by-step execution', level: 'demonstrated', confidence: 0.96 }
