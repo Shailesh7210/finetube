@@ -214,8 +214,22 @@ async function runUniversalE2ESmoke() {
   assert.strictEqual(curatedVidRes.body.data.providerVideoId, 'WUvTyaaNkzM');
   console.log('✅ PASSED [Video Resolution & Filtering]: Verified Shorts filtering and dynamic ID lookup');
 
+  // 11. Topic Page Hydration + AI Grounded Workspace on Discovered Video
+  const topicHydrateRes = await invokeExpress(app, 'GET', '/api/v1/topics/econ_macroeconomics');
+  assert.strictEqual(topicHydrateRes.status, 200, 'Topic endpoint returns 200');
+  assert.ok(topicHydrateRes.body.data.videos.length > 0, 'Hydrated videos for Macroeconomics topic');
+
+  const discoveredId = econFeedRes.body.data[0].video.id;
+  const aiAskDiscoveredRes = await invokeExpress(app, 'POST', '/api/v1/ai/ask', {
+    videoId: discoveredId,
+    question: 'What are the core principles covered in this lecture?'
+  });
+  assert.strictEqual(aiAskDiscoveredRes.status, 200, 'AI Ask works on freshly discovered YouTube videos');
+  assert.ok(aiAskDiscoveredRes.body.data.answer, 'AI returned answer for discovered video');
+  console.log('✅ PASSED [Topic Hydration & AI Workspace]: Verified topic hydration and AI QA on discovered video');
+
   console.log('\n==============================================================');
-  console.log('In-Process End-to-End Universal Platform Test Passed 10/10!');
+  console.log('In-Process End-to-End Universal Platform Test Passed 11/11!');
   console.log('==============================================================\n');
 }
 
