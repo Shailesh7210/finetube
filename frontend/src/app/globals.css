@@ -117,6 +117,51 @@ body {
   }
 }
 
+@keyframes dashFlow {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+@keyframes ecgTrace {
+  0% {
+    stroke-dashoffset: 620;
+  }
+  75% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes heartbeatPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.12);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.08);
+  }
+  70% {
+    transform: scale(1);
+  }
+}
+
+@keyframes orbitSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .animate-float {
   animation: floatSlow 5.5s ease-in-out infinite;
 }
@@ -165,6 +210,26 @@ body {
 
 .animate-progress-flow {
   animation: progressFlow 7s ease-in-out infinite;
+}
+
+.animate-dash-flow {
+  animation: dashFlow 1.4s linear infinite;
+}
+
+.animate-ecg-trace {
+  stroke-dasharray: 620;
+  animation: ecgTrace 3.2s ease-in-out infinite;
+}
+
+.animate-heartbeat {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: heartbeatPulse 1.6s ease-in-out infinite;
+}
+
+.animate-orbit-slow {
+  transform-origin: 240px 135px;
+  animation: orbitSlow 16s linear infinite;
 }
 
 ::-webkit-scrollbar {
