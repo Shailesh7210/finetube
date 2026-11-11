@@ -139,8 +139,7 @@ export default function LandingPage() {
     return picked.length >= 4 ? picked : videos.slice(0, 6);
   }, [videos]);
 
-  const marqueeRow1 = useMemo(() => topics.slice(0, Math.ceil(topics.length / 2)), [topics]);
-  const marqueeRow2 = useMemo(() => topics.slice(Math.ceil(topics.length / 2)), [topics]);
+  const marqueeTopics = useMemo(() => topics, [topics]);
 
   const handleHeroSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -321,30 +320,28 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* DUAL-ROW INFINITE SUBJECTS MARQUEE */}
-      <section className="py-8 border-y border-slate-200 bg-white/80 marquee-container overflow-hidden space-y-3">
-        <div className="animate-marquee gap-3">
-          {[...marqueeRow1, ...marqueeRow1].map((t, i) => (
-            <Link
-              key={`${t.id}-r1-${i}`}
-              href={`/topics/${t.slug}`}
-              className="mx-1.5 px-4 py-2 rounded-full bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-sm font-medium text-slate-700 hover:text-indigo-700 whitespace-nowrap transition-colors"
-            >
-              {t.name}
-            </Link>
-          ))}
-        </div>
-
-        <div className="animate-marquee-reverse gap-3">
-          {[...marqueeRow2, ...marqueeRow2].map((t, i) => (
-            <Link
-              key={`${t.id}-r2-${i}`}
-              href={`/topics/${t.slug}`}
-              className="mx-1.5 px-4 py-2 rounded-full bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-sm font-medium text-slate-700 hover:text-indigo-700 whitespace-nowrap transition-colors"
-            >
-              {t.name}
-            </Link>
-          ))}
+      {/* CLEAN EDGE-FADED EDITORIAL SUBJECTS MARQUEE */}
+      <section className="py-5 border-y border-slate-200/80 bg-white/70 backdrop-blur-xs">
+        <div
+          className="max-w-7xl mx-auto marquee-container overflow-hidden"
+          style={{
+            maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)'
+          }}
+        >
+          <div className="animate-marquee items-center">
+            {[...marqueeTopics, ...marqueeTopics].map((t, i) => (
+              <div key={`${t.id}-m-${i}`} className="flex items-center shrink-0">
+                <Link
+                  href={`/topics/${t.slug}`}
+                  className="px-4 py-1 text-sm font-medium text-slate-600 hover:text-indigo-600 whitespace-nowrap transition-colors"
+                >
+                  {t.name}
+                </Link>
+                <span className="w-1 h-1 rounded-full bg-slate-300 mx-1" aria-hidden="true" />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
