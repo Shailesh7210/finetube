@@ -467,7 +467,7 @@ export default function LandingPage() {
 
       {/* HOW IT WORKS — SOFT SECTION BAND TRANSITION */}
       <SectionWaveBridge tint="indigo" />
-      <section className="relative py-16 bg-gradient-to-b from-transparent via-indigo-50/45 to-transparent">
+      <section className="relative py-16 bg-gradient-to-b from-transparent via-indigo-50/25 to-transparent">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
           <Reveal>
             <div className="text-center max-w-2xl mx-auto space-y-2.5">
@@ -487,7 +487,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Reveal delayMs={40} variant="left">
-              <div className="h-full p-7 rounded-3xl bg-white/95 border border-slate-200 shadow-xs hover:shadow-md transition-all space-y-4">
+              <div className="h-full p-7 rounded-3xl bg-white/85 backdrop-blur-xs border border-slate-200 shadow-xs hover:shadow-md transition-all space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center">
                     <SlidersHorizontal className="w-5 h-5" />
@@ -502,7 +502,7 @@ export default function LandingPage() {
             </Reveal>
 
             <Reveal delayMs={110} variant="up">
-              <div className="h-full p-7 rounded-3xl bg-white/95 border border-slate-200 shadow-xs hover:shadow-md transition-all space-y-4">
+              <div className="h-full p-7 rounded-3xl bg-white/85 backdrop-blur-xs border border-slate-200 shadow-xs hover:shadow-md transition-all space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center">
                     <ShieldCheck className="w-5 h-5" />
@@ -517,7 +517,7 @@ export default function LandingPage() {
             </Reveal>
 
             <Reveal delayMs={180} variant="right">
-              <div className="h-full p-7 rounded-3xl bg-white/95 border border-slate-200 shadow-xs hover:shadow-md transition-all space-y-4">
+              <div className="h-full p-7 rounded-3xl bg-white/85 backdrop-blur-xs border border-slate-200 shadow-xs hover:shadow-md transition-all space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="w-10 h-10 rounded-2xl bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center">
                     <Code2 className="w-5 h-5" />
@@ -568,7 +568,7 @@ export default function LandingPage() {
         <Reveal variant="scale">
           <div
             key={activeStream.id}
-            className="p-7 sm:p-9 rounded-3xl bg-white/95 border border-slate-200 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-fade-in-up"
+            className="p-7 sm:p-9 rounded-3xl bg-white/85 backdrop-blur-xs border border-slate-200 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-fade-in-up"
           >
             <div className="lg:col-span-7 space-y-4">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-xs font-semibold text-indigo-700">
@@ -619,11 +619,11 @@ export default function LandingPage() {
 
       {/* COMPARISON & BENTO FEATURES — SOFT TEAL/EMERALD SECTION TRANSITION */}
       <SectionWaveBridge tint="emerald" />
-      <section className="relative py-14 bg-gradient-to-b from-transparent via-emerald-50/30 to-transparent">
+      <section className="relative py-14 bg-gradient-to-b from-transparent via-emerald-50/20 to-transparent">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <Reveal delayMs={30} variant="left" className="lg:col-span-6">
-              <div className="h-full p-7 rounded-3xl bg-white/95 border border-slate-200 shadow-xs space-y-4">
+              <div className="h-full p-7 rounded-3xl bg-white/85 backdrop-blur-xs border border-slate-200 shadow-xs space-y-4">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Standard YouTube
                 </div>
@@ -646,7 +646,7 @@ export default function LandingPage() {
             </Reveal>
 
             <Reveal delayMs={90} variant="right" className="lg:col-span-6">
-              <div className="h-full p-7 rounded-3xl bg-white/95 border border-emerald-200 shadow-xs space-y-4">
+              <div className="h-full p-7 rounded-3xl bg-white/85 backdrop-blur-xs border border-emerald-200 shadow-xs space-y-4">
                 <div className="text-xs font-bold uppercase tracking-wider text-emerald-700">
                   FineTube Focus Mode
                 </div>
@@ -672,7 +672,7 @@ export default function LandingPage() {
           {/* Existing Bento Discovery & Paths Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <Reveal delayMs={40} className="lg:col-span-6">
-              <div className="h-full p-7 rounded-3xl bg-white/95 border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-5">
+              <div className="h-full p-7 rounded-3xl bg-white/85 backdrop-blur-xs border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-5">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900">Dynamic YouTube Discovery</h3>
                   <p className="text-sm text-slate-500 mt-1">Live search across any subject on demand.</p>
@@ -689,7 +689,7 @@ export default function LandingPage() {
             </Reveal>
 
             <Reveal delayMs={100} className="lg:col-span-6">
-              <div className="h-full p-7 rounded-3xl bg-white/95 border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-5">
+              <div className="h-full p-7 rounded-3xl bg-white/85 backdrop-blur-xs border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-5">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900">Universal Learning Paths</h3>
                   <p className="text-sm text-slate-500 mt-1">Structured sequences across sciences, medicine &amp; tech.</p>
@@ -737,7 +737,7 @@ export default function LandingPage() {
               <Reveal key={v.id} delayMs={idx * 65}>
                 <Link
                   href={`/watch/${v.id}`}
-                  className="group block rounded-2xl bg-white/95 border border-slate-200 overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-1 transition-all"
+                  className="group block rounded-2xl bg-white/85 backdrop-blur-xs border border-slate-200 overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-1 transition-all"
                 >
                   <div className="relative aspect-video bg-slate-200 overflow-hidden">
                     <img
