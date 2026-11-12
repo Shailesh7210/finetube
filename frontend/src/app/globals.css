@@ -11,7 +11,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .font-editorial {
@@ -198,6 +198,19 @@ body {
 .marquee-container:hover .animate-marquee,
 .marquee-container:hover .animate-marquee-reverse {
   animation-play-state: paused;
+}
+
+@keyframes pageFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-page-fade {
+  animation: pageFade 0.35s ease-out both;
 }
 
 .animate-fade-in-up {

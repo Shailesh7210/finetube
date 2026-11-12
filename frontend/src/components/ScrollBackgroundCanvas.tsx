@@ -18,7 +18,38 @@ interface KnowledgeParticle {
   phase: number;
 }
 
+interface WaterDroplet {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  maxRadius: number;
+  alpha: number;
+  color: [number, number, number];
+  huePhase: number;
+}
+
+interface WaterRipple {
+  x: number;
+  y: number;
+  radius: number;
+  maxRadius: number;
+  alpha: number;
+  color: [number, number, number];
+  speed: number;
+}
+
 const GLYPHS = ['∑', '∫', 'π', '</>', '⚛', 'λ', 'Δ', '∞'];
+
+const WATER_COLORS: Array<[number, number, number]> = [
+  [14, 165, 233],  // Cerulean Sky
+  [99, 102, 241],  // Deep Indigo
+  [20, 184, 166],  // Aqua Teal
+  [139, 92, 246],  // Iris Violet
+  [56, 189, 248],  // Cyan Splash
+  [16, 185, 129]   // Seafoam Mint
+];
 
 const SECTION_LABELS = [
   { id: 'hero', label: 'Overview', at: 0 },
@@ -36,10 +67,10 @@ function lerpColor(c1: [number, number, number], c2: [number, number, number], t
 }
 
 /**
- * Rich Light-Theme Scroll-Reactive Background Engine:
- * - Animated HTML5 canvas with connected knowledge constellation, floating glyphs, & flowing aurora wave ribbons
- * - Color-shifting ambient section washes as the learner scrolls from section to section
- * - Scroll progress indicator + floating section chapter rail (desktop)
+ * Interactive Light-Theme Scroll + Fluid Water Pointer Background Engine:
+ * - Multi-color liquid watercolor trail + concentric water surface ripples on mouse movement & click
+ * - Buoyant constellation nodes + floating glyphs that part gently around the cursor wake
+ * - Color-shifting aurora wave ribbons & ambient section gradients across scroll depth
  */
 export function ScrollBackgroundCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -89,6 +120,101 @@ export function ScrollBackgroundCanvas() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas, { passive: true });
 
+    // Fluid pointer state
+    const pointer = {
+      x: width * 0.5,
+      y: height * 0.4,
+      smoothX: width * 0.5,
+      smoothY: height * 0.4,
+      active: false,
+      lastSpawnX: width * 0.5,
+      lastSpawnY: height * 0.4,
+      lastRippleAt: 0,
+      colorStep: 0
+    };
+
+    const droplets: WaterDroplet[] = [];
+    const ripples: WaterRipple[] = [];
+
+    const pickNextWaterColor = (): [number, number, number] => {
+      pointer.colorStep = (pointer.colorStep + 1) % WATER_COLORS.length;
+      return WATER_COLORS[pointer.colorStep];
+    };
+
+    const spawnWaterWake = (x: number, y: number, dx: number, dy: number, forceRipple = false) => {
+      const color = pickNextWaterColor();
+      const speed = Math.hypot(dx, dy);
+
+      if (droplets.length >= 52) droplets.shift();
+      droplets.push({
+        x,
+        y,
+        vx: Math.max(-2.6, Math.min(2.6, dx * 0.085)) + (Math.random() - 0.5) * 0.5,
+        vy: Math.max(-2.6, Math.min(2.6, dy * 0.085)) + (Math.random() - 0.5) * 0.5,
+        radius: 30 + Math.min(20, speed * 0.35),
+        maxRadius: 130 + Math.min(85, speed * 1.2),
+        alpha: 0.42,
+        color,
+        huePhase: Math.random() * Math.PI * 2
+      });
+
+      const now = performance.now();
+      if (forceRipple || (speed > 3 && now - pointer.lastRippleAt > 80)) {
+        pointer.lastRippleAt = now;
+        if (ripples.length >= 22) ripples.shift();
+        ripples.push({
+          x,
+          y,
+          radius: 8,
+          maxRadius: forceRipple ? 190 : 120 + Math.min(60, speed * 1.15),
+          alpha: forceRipple ? 0.58 : 0.42,
+          color,
+          speed: forceRipple ? 2.8 : 2.2
+        });
+      }
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const prevX = pointer.x;
+      const prevY = pointer.y;
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+      pointer.active = true;
+
+      const moveDist = Math.hypot(pointer.x - pointer.lastSpawnX, pointer.y - pointer.lastSpawnY);
+      if (moveDist >= 10) {
+        spawnWaterWake(pointer.x, pointer.y, pointer.x - prevX, pointer.y - prevY, false);
+        pointer.lastSpawnX = pointer.x;
+        pointer.lastSpawnY = pointer.y;
+      }
+    };
+
+    const handlePointerDown = (e: PointerEvent) => {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+      pointer.active = true;
+      // Layered triple water splash ripple on click
+      spawnWaterWake(e.clientX, e.clientY, 0, 0, true);
+      const splashColor = pickNextWaterColor();
+      ripples.push({
+        x: e.clientX,
+        y: e.clientY,
+        radius: 2,
+        maxRadius: 130,
+        alpha: 0.44,
+        color: splashColor,
+        speed: 2.2
+      });
+    };
+
+    const handlePointerLeave = () => {
+      pointer.active = false;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    window.addEventListener('pointerleave', handlePointerLeave, { passive: true });
+
     // Initialize floating knowledge particles & symbols
     const particleCount = width < 768 ? 22 : 40;
     const particles: KnowledgeParticle[] = Array.from({ length: particleCount }, (_, i) => ({
@@ -109,13 +235,16 @@ export function ScrollBackgroundCanvas() {
       time += 0.016;
       frameCount += 1;
 
-      // Smoothly interpolate scroll progress & decay scroll velocity
+      // Smoothly interpolate scroll metrics & pointer position
       const cur = smoothScrollRef.current;
       const tgt = targetScrollRef.current;
       cur.progress += (tgt.progress - cur.progress) * 0.1;
       cur.scrollY += (tgt.scrollY - cur.scrollY) * 0.1;
       cur.velocity += (tgt.velocity - cur.velocity) * 0.14;
       tgt.velocity *= 0.88;
+
+      pointer.smoothX += (pointer.x - pointer.smoothX) * 0.16;
+      pointer.smoothY += (pointer.y - pointer.smoothY) * 0.16;
 
       if (frameCount % 2 === 0) {
         setScroll({ progress: cur.progress, scrollY: cur.scrollY, velocity: cur.velocity });
@@ -125,8 +254,6 @@ export function ScrollBackgroundCanvas() {
         ctx.clearRect(0, 0, width, height);
 
         const p = cur.progress;
-        // Shift primary palette cleanly across sections:
-        // Indigo -> Emerald/Teal -> Violet -> Sky -> Warm Amber/Indigo
         const palette: Array<[number, number, number]> = [
           [79, 70, 229],  // Indigo
           [14, 165, 233], // Sky
@@ -140,7 +267,85 @@ export function ScrollBackgroundCanvas() {
         const primary = lerpColor(palette[idx], palette[idx + 1], localT);
         const secondary = lerpColor(palette[(idx + 1) % palette.length], palette[(idx + 2) % palette.length], localT);
 
-        // 1. Flowing multi-band aurora sine waves that ripple faster during section scrolls
+        // 1. Live Fluid Watercolor Pointer Trail Blobs
+        for (let i = droplets.length - 1; i >= 0; i--) {
+          const d = droplets[i];
+          d.x += d.vx + Math.sin(time * 2.2 + d.huePhase) * 0.35;
+          d.y += d.vy + Math.cos(time * 1.9 + d.huePhase) * 0.35;
+          d.vx *= 0.96;
+          d.vy *= 0.96;
+          d.radius += (d.maxRadius - d.radius) * 0.045 + 0.6;
+          d.alpha *= 0.962;
+
+          if (d.alpha < 0.012 || d.radius >= d.maxRadius) {
+            droplets.splice(i, 1);
+            continue;
+          }
+
+          const [r, g, b] = d.color;
+          const grad = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, d.radius);
+          grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${(d.alpha * 0.72).toFixed(3)})`);
+          grad.addColorStop(0.55, `rgba(${r}, ${g}, ${b}, ${(d.alpha * 0.32).toFixed(3)})`);
+          grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Subtle continuous liquid glow right beneath pointer when hovering
+        if (pointer.active) {
+          const hoverColor = WATER_COLORS[Math.floor(time * 0.6) % WATER_COLORS.length];
+          const [hr, hg, hb] = hoverColor;
+          const auraR = 95 + Math.sin(time * 3) * 10;
+          const hoverGrad = ctx.createRadialGradient(
+            pointer.smoothX,
+            pointer.smoothY,
+            0,
+            pointer.smoothX,
+            pointer.smoothY,
+            auraR
+          );
+          hoverGrad.addColorStop(0, `rgba(${hr}, ${hg}, ${hb}, 0.22)`);
+          hoverGrad.addColorStop(0.6, `rgba(${hr}, ${hg}, ${hb}, 0.08)`);
+          hoverGrad.addColorStop(1, `rgba(${hr}, ${hg}, ${hb}, 0)`);
+          ctx.fillStyle = hoverGrad;
+          ctx.beginPath();
+          ctx.arc(pointer.smoothX, pointer.smoothY, auraR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 2. Expanding Concentric Water Surface Ripples
+        for (let i = ripples.length - 1; i >= 0; i--) {
+          const rp = ripples[i];
+          rp.radius += rp.speed;
+          rp.alpha *= 0.952;
+
+          if (rp.alpha < 0.015 || rp.radius >= rp.maxRadius) {
+            ripples.splice(i, 1);
+            continue;
+          }
+
+          const [r, g, b] = rp.color;
+          // Outer primary crest
+          ctx.beginPath();
+          ctx.arc(rp.x, rp.y, rp.radius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${rp.alpha.toFixed(3)})`;
+          ctx.lineWidth = Math.max(0.8, 2.4 * (1 - rp.radius / rp.maxRadius));
+          ctx.stroke();
+
+          // Inner secondary harmonic ring
+          if (rp.radius > 22) {
+            ctx.beginPath();
+            ctx.arc(rp.x, rp.y, rp.radius * 0.65, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${(rp.alpha * 0.5).toFixed(3)})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+
+        // 3. Flowing Multi-Band Aurora Sine Waves across section transitions
         for (let band = 0; band < 3; band++) {
           ctx.beginPath();
           const baseY = height * (0.28 + band * 0.25) + Math.sin(p * Math.PI * 2 + band) * 45;
@@ -150,8 +355,13 @@ export function ScrollBackgroundCanvas() {
 
           ctx.moveTo(0, baseY);
           for (let x = 0; x <= width; x += 24) {
+            const distFromPointer = pointer.active
+              ? Math.max(0, 1 - Math.hypot(x - pointer.smoothX, baseY - pointer.smoothY) / 260)
+              : 0;
+            const waterLift = Math.sin(time * 4 - x * 0.03) * distFromPointer * 18;
             const y =
               baseY +
+              waterLift +
               Math.sin(x * freq + phase) * amp +
               Math.cos(x * freq * 0.55 - phase * 0.8) * (amp * 0.45);
             ctx.lineTo(x, y);
@@ -162,19 +372,29 @@ export function ScrollBackgroundCanvas() {
           ctx.lineWidth = 2.2;
           ctx.stroke();
 
-          // Soft fill ribbon beneath each wave
           ctx.lineTo(width, height);
           ctx.lineTo(0, height);
           ctx.closePath();
-          ctx.globalAlpha = 0.028;
+          ctx.globalAlpha = 0.024;
           ctx.fillStyle = band % 2 === 0 ? primary : secondary;
           ctx.fill();
         }
 
-        // 2. Knowledge constellation nodes + connecting mesh + educational glyphs
+        // 4. Knowledge Constellation Nodes pushed gently by Water Wake
         const scrollShiftY = -cur.velocity * 0.22;
         for (let i = 0; i < particles.length; i++) {
           const pt = particles[i];
+          if (pointer.active) {
+            const dx = pt.x - pointer.smoothX;
+            const dy = pt.y - pointer.smoothY;
+            const d = Math.hypot(dx, dy);
+            if (d > 1 && d < 140) {
+              const force = (1 - d / 140) * 0.55;
+              pt.x += (dx / d) * force;
+              pt.y += (dy / d) * force;
+            }
+          }
+
           pt.x += pt.vx + Math.sin(time + pt.phase) * 0.15;
           pt.y += pt.vy + scrollShiftY;
 
@@ -184,7 +404,6 @@ export function ScrollBackgroundCanvas() {
           if (pt.y > height + 30) pt.y = -30;
         }
 
-        // Draw connecting edges between close nodes
         const maxDist = width < 768 ? 115 : 155;
         ctx.lineWidth = 1;
         for (let i = 0; i < particles.length; i++) {
@@ -197,13 +416,12 @@ export function ScrollBackgroundCanvas() {
               ctx.moveTo(particles[i].x, particles[i].y);
               ctx.lineTo(particles[j].x, particles[j].y);
               ctx.strokeStyle = primary;
-              ctx.globalAlpha = (1 - dist / maxDist) * 0.18;
+              ctx.globalAlpha = (1 - dist / maxDist) * 0.16;
               ctx.stroke();
             }
           }
         }
 
-        // Draw particles & academic symbols
         for (let i = 0; i < particles.length; i++) {
           const pt = particles[i];
           if (pt.glyph) {
@@ -215,7 +433,7 @@ export function ScrollBackgroundCanvas() {
             ctx.beginPath();
             ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
             ctx.fillStyle = i % 2 === 0 ? primary : secondary;
-            ctx.globalAlpha = 0.26;
+            ctx.globalAlpha = 0.25;
             ctx.fill();
           }
         }
@@ -231,6 +449,9 @@ export function ScrollBackgroundCanvas() {
       window.removeEventListener('scroll', updateTarget);
       window.removeEventListener('resize', updateTarget);
       window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointerleave', handlePointerLeave);
       cancelAnimationFrame(rafId);
     };
   }, []);
@@ -241,7 +462,6 @@ export function ScrollBackgroundCanvas() {
     0
   );
 
-  // Smooth CSS pastel orbs shifting loudly enough to feel visibly alive behind white cards
   const orb1Bg =
     p < 0.28
       ? 'rgba(129, 140, 248, 0.34)'
@@ -267,12 +487,11 @@ export function ScrollBackgroundCanvas() {
         style={{ width: `${Math.max(3, p * 100)}%` }}
       />
 
-      {/* Isolated Foreground-Underlay Stack (renders ABOVE body's bg-slate-50 and BELOW page z-10 content) */}
+      {/* Isolated Foreground-Underlay Stack */}
       <div
         aria-hidden="true"
         className="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none"
       >
-        {/* Soft Shifting Mesh Orbs */}
         <div
           className="absolute w-[560px] h-[560px] rounded-full blur-3xl will-change-transform transition-colors duration-500"
           style={{
@@ -292,7 +511,7 @@ export function ScrollBackgroundCanvas() {
           }}
         />
 
-        {/* Animated Constellation & Aurora Wave Canvas */}
+        {/* Interactive Water Ripple, Fluid Watercolor Trail & Constellation Canvas */}
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       </div>
 
